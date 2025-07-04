@@ -1,0 +1,97 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version-bump:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-edit
+        run: cargo install cargo-edit
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(grep "^version = " Cargo.toml | head -1 | cut -d'"' -f2)
+          echo "Current version: $CURRENT_VERSION"
+
+          # Bump version using cargo-edit
+          cargo set-version --bump ${{ github.event.inputs.version_type }}
+
+          # Get new version
+          NEW_VERSION=$(grep "^version = " Cargo.toml | head -1 | cut -d'"' -f2)
+          echo "New version: $NEW_VERSION"
+
+          # Create version bump commit
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore: bump version to $NEW_VERSION"
+
+          # Create and push tag
+          git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
+          git push origin main
+          git push origin "v$NEW_VERSION"
+
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Create Release Notes
+        run: |
+          # Generate changelog since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            echo "## Changes since $LAST_TAG" > release_notes.md
+            git log --pretty=format:"- %s" $LAST_TAG..HEAD >> release_notes.md
+          else
+            echo "## Initial Release" > release_notes.md
+            echo "- First release of bestls" >> release_notes.md
+          fi
+
+      - name: Create Pull Request (if needed)
+        if: github.ref != 'refs/heads/main'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump version to ${{ env.NEW_VERSION }}"
+          title: "chore: bump version to ${{ env.NEW_VERSION }}"
+          body: |
+            Automated version bump from ${{ github.event.inputs.version_type }} increment.
+
+            This PR contains:
+            - Version bump in Cargo.toml
+            - Updated Cargo.lock
+
+            Once merged, this will trigger a new release.
+          branch: version-bump-${{ env.NEW_VERSION }}
+          base: main

@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        rust-version: [stable, beta]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        run: cargo test --verbose
+
+      - name: Build
+        run: cargo build --verbose
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run security audit
+        run: cargo audit
+
+  check-version:
+    name: Check Version Consistency
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get tag version
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Check Cargo.toml version
+        run: |
+          CARGO_VERSION=$(grep "^version = " Cargo.toml | head -1 | cut -d'"' -f2)
+          if [ "$CARGO_VERSION" != "${{ steps.get_version.outputs.version }}" ]; then
+            echo "Version mismatch: Cargo.toml has $CARGO_VERSION but tag is ${{ steps.get_version.outputs.version }}"
+            exit 1
+          fi
