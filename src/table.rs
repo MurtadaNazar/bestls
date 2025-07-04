@@ -33,5 +33,5 @@ pub fn print_table(entries: Vec<FileEntry>) {
     table.modify(Columns::one(2), Color::FG_BRIGHT_MAGENTA);
     table.modify(Columns::one(3), Color::FG_BRIGHT_YELLOW);
     table.modify(Rows::first(), Color::FG_BRIGHT_GREEN);
-    println!("{}", table);
+    println!("{table}");
 }

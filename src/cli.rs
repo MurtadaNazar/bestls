@@ -18,7 +18,7 @@ Usage Examples:
   bestls --json-pretty --sort date
 "#
 )]
-pub struct CLI {
+pub struct Cli {
     #[arg(
         short = 'p',
         long = "path",

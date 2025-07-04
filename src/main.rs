@@ -4,14 +4,14 @@ mod fsops;
 mod table;
 
 use clap::Parser;
-use cli::{CLI, SortBy};
+use cli::{Cli, SortBy};
 use fsops::get_files;
 use owo_colors::OwoColorize;
 use std::path::PathBuf;
 use table::print_table;
 
 fn main() {
-    let cli: CLI = CLI::parse();
+    let cli: Cli = Cli::parse();
     let path: PathBuf = cli.path.unwrap_or_else(|| PathBuf::from("."));
 
     match get_files(&path) {
