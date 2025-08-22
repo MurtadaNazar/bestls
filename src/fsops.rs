@@ -3,9 +3,12 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Utc};
 use rayon::prelude::*;
 use serde::Serialize;
-use std::os::unix::fs::PermissionsExt;
-use std::{fs, io, os::unix::fs::MetadataExt, path::Path};
+use std::{fs, io, path::Path};
 use strum::Display;
+
+#[cfg(unix)]
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
+#[cfg(unix)]
 use users::{get_group_by_gid, get_user_by_uid};
 
 #[derive(Debug, Display, Serialize, Clone)]
@@ -55,6 +58,7 @@ fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
         })
         .unwrap_or_default();
 
+    // Permissions
     let permissions: String = if cfg!(unix) {
         let mode: u32 = metadata.permissions().mode();
         format!(
@@ -70,17 +74,11 @@ fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
             if mode & 0o001 != 0 { 'x' } else { '-' },
         )
     } else {
-        String::from("N/A")
+        "N/A".into()
     };
 
-    let owner: u32 = metadata.uid();
-    let group: u32 = metadata.gid();
-    let owner_name: String = get_user_by_uid(owner)
-        .map(|u: users::User| u.name().to_string_lossy().to_string())
-        .unwrap_or(owner.to_string());
-    let group_name: String = get_group_by_gid(group)
-        .map(|g: users::Group| g.name().to_string_lossy().to_string())
-        .unwrap_or(group.to_string());
+    // Owner / Group
+    let (owner_name, group_name) = get_owner_group(&metadata);
 
     Ok(FileEntry {
         name: entry.file_name().to_string_lossy().to_string(),
@@ -100,4 +98,22 @@ fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
         owner: owner_name,
         group: group_name,
     })
+}
+
+#[cfg(unix)]
+fn get_owner_group(metadata: &fs::Metadata) -> (String, String) {
+    let uid: u32 = metadata.uid();
+    let gid: u32 = metadata.gid();
+    let user: String = get_user_by_uid(uid)
+        .map(|u: users::User| u.name().to_string_lossy().into_owned())
+        .unwrap_or(uid.to_string());
+    let group: String = get_group_by_gid(gid)
+        .map(|g: users::Group| g.name().to_string_lossy().into_owned())
+        .unwrap_or(gid.to_string());
+    (user, group)
+}
+
+#[cfg(not(unix))]
+fn get_owner_group(_metadata: &fs::Metadata) -> (String, String) {
+    ("N/A".into(), "N/A".into())
 }
