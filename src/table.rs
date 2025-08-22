@@ -14,20 +14,29 @@ struct DisplayEntry {
     human_size: String,
     #[tabled(rename = "Modified")]
     modified: String,
+    #[tabled(rename = "Permissions")]
+    permissions: String,
+    #[tabled(rename = "Owner")]
+    owner: String,
+    #[tabled(rename = "Group")]
+    group: String,
 }
 
 pub fn print_table(entries: Vec<FileEntry>) {
     let data: Vec<DisplayEntry> = entries
-        .into_iter()
-        .map(|e| DisplayEntry {
-            name: e.name,
+        .iter()
+        .map(|e: &FileEntry| DisplayEntry {
+            name: e.name.clone(),
             e_type: e.e_type.to_string(),
-            human_size: e.human_size,
-            modified: e.modified,
+            human_size: e.human_size.clone(),
+            modified: e.modified.clone(),
+            permissions: e.permissions.clone(),
+            owner: e.owner.clone(),
+            group: e.group.clone(),
         })
         .collect();
 
-    let mut table = Table::new(data);
+    let mut table: Table = Table::new(data);
     table.with(Style::rounded());
     table.modify(Columns::first(), Color::FG_BRIGHT_CYAN);
     table.modify(Columns::one(2), Color::FG_BRIGHT_MAGENTA);

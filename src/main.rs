@@ -13,13 +13,20 @@ use table::print_table;
 fn main() {
     let cli: Cli = Cli::parse();
     let path: PathBuf = cli.path.unwrap_or_else(|| PathBuf::from("."));
+    let include_hidden: bool = cli.all;
 
-    match get_files(&path) {
+    match get_files(&path, include_hidden) {
         Ok(mut files) => {
             match cli.sort_by {
-                SortBy::Name => files.sort_by(|a, b| a.name.cmp(&b.name)),
-                SortBy::Size => files.sort_by(|a, b| a.len_bytes.cmp(&b.len_bytes)),
-                SortBy::Date => files.sort_by(|a, b| a.modified.cmp(&b.modified)),
+                SortBy::Name => {
+                    files.sort_by(|a: &fsops::FileEntry, b: &fsops::FileEntry| a.name.cmp(&b.name))
+                }
+                SortBy::Size => files.sort_by(|a: &fsops::FileEntry, b: &fsops::FileEntry| {
+                    a.len_bytes.cmp(&b.len_bytes)
+                }),
+                SortBy::Date => files.sort_by(|a: &fsops::FileEntry, b: &fsops::FileEntry| {
+                    a.modified.cmp(&b.modified)
+                }),
             }
 
             if cli.json_pretty {

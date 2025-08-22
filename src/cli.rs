@@ -47,13 +47,21 @@ pub struct Cli {
         long = "sort",
         value_enum,
         default_value = "name",
-        help = "Sort files by the given attribute.",
-        value_parser = ["name", "size", "date"]
+        help = "Sort files by the given attribute."
     )]
     pub sort_by: SortBy,
+
+    #[arg(
+        short = 'a',
+        long = "all",
+        help = "Include hidden files.",
+        default_value_t = false
+    )]
+    pub all: bool,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
+#[clap(rename_all = "lower")]
 pub enum SortBy {
     Name,
     Size,
