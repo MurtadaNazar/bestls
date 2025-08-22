@@ -1,4 +1,6 @@
-use clap::{Parser, ValueEnum};
+use clap::{CommandFactory, Parser, ValueEnum};
+use clap_complete::{generate, Shell};
+use std::io;
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]
@@ -11,14 +13,18 @@ Features:
 - Outputs in table or JSON formats.
 - Supports sorting by name, size, or modification date.
 - Pretty-printed JSON output available.
+- Shell completion generation support.
 
 Usage Examples:
   bestls -p ./src
   bestls --json --sort size
   bestls --json-pretty --sort date
+  bestls completion bash > ~/.local/share/bash-completion/completions/bestls
 "#
 )]
 pub struct Cli {
+    #[command(subcommand)]
+    pub command: Option<Commands>,
     #[arg(
         short = 'p',
         long = "path",
@@ -66,4 +72,23 @@ pub enum SortBy {
     Name,
     Size,
     Date,
+}
+
+#[derive(Debug, Parser)]
+pub enum Commands {
+    /// Generate shell completions
+    Completion {
+        /// The shell to generate completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+}
+
+impl Cli {
+    /// Generate shell completions
+    pub fn generate_completion(shell: Shell) {
+        let mut cmd = Self::command();
+        let name = cmd.get_name().to_string();
+        generate(shell, &mut cmd, name, &mut io::stdout());
+    }
 }

@@ -4,7 +4,7 @@ mod fsops;
 mod table;
 
 use clap::Parser;
-use cli::{Cli, SortBy};
+use cli::{Cli, Commands, SortBy};
 use fsops::get_files;
 use owo_colors::OwoColorize;
 use std::path::PathBuf;
@@ -12,6 +12,12 @@ use table::print_table;
 
 fn main() {
     let cli: Cli = Cli::parse();
+
+    if let Some(Commands::Completion { shell }) = cli.command {
+        Cli::generate_completion(shell);
+        return;
+    }
+
     let path: PathBuf = cli.path.unwrap_or_else(|| PathBuf::from("."));
     let include_hidden: bool = cli.all;
 

@@ -1,0 +1,91 @@
+# Maintainer: Murtaza Nazar <mkm9284@gmail.com>
+pkgname=bestls
+pkgver=1.2.0
+pkgrel=1
+pkgdesc="A fast, colorful, and Rust-powered replacement for the traditional ls command with JSON output and shell completions"
+arch=('x86_64' 'aarch64')
+url="https://github.com/MurtadaNazar/bestls"
+license=('MIT')
+depends=('gcc-libs')
+makedepends=('rust' 'cargo')
+source=("$pkgname-$pkgver.tar.gz::https://github.com/MurtadaNazar/$pkgname/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')  # Replace with actual checksum after release
+options=('!lto')
+provides=('bestls')
+conflicts=('bestls-git')
+
+prepare() {
+  cd "$srcdir/$pkgname-$pkgver" || exit 1
+
+  # Verify dependencies are available
+  export RUSTUP_TOOLCHAIN=stable
+  if ! cargo fetch --locked; then
+    echo "Error: Failed to fetch dependencies"
+    return 1
+  fi
+
+  # Create directories for completions
+  mkdir -p completions
+}
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver" || exit 1
+
+  # Set up build environment
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  export CARGO_HOME="$srcdir/cargo-home"
+
+  # Build the release version
+  if ! cargo build --release; then
+    echo "Error: Build failed"
+    return 1
+  fi
+
+  # Create completions directory if it doesn't exist
+  mkdir -p completions
+
+  # Generate actual shell completions using the built binary
+  ./target/release/$pkgname completion bash > "completions/$pkgname"
+  ./target/release/$pkgname completion zsh > "completions/_$pkgname"
+  ./target/release/$pkgname completion fish > "completions/$pkgname.fish"
+}
+
+check() {
+  cd "$srcdir/$pkgname-$pkgver" || exit 1
+
+  export RUSTUP_TOOLCHAIN=stable
+  # Run the test suite
+  if ! cargo test --frozen --release; then
+    echo "Error: Tests failed"
+    return 1
+  fi
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver" || exit 1
+
+  # Create required directories
+  install -dm755 "$pkgdir/usr/bin"
+  install -dm755 "$pkgdir/usr/share/bash-completion/completions"
+  install -dm755 "$pkgdir/usr/share/zsh/site-functions"
+  install -dm755 "$pkgdir/usr/share/fish/vendor_completions.d"
+  install -dm755 "$pkgdir/usr/share/doc/$pkgname"
+  install -dm755 "$pkgdir/usr/share/licenses/$pkgname"
+
+  # Install binary
+  install -Dm755 "target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+
+  # Install documentation
+  for doc in README.md CHANGELOG.md; do
+    if [ -f "$doc" ]; then
+      install -Dm644 "$doc" "$pkgdir/usr/share/doc/$pkgname/$doc"
+    fi
+  done
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+  # Install shell completions
+  install -Dm644 "completions/$pkgname" "$pkgdir/usr/share/bash-completion/completions/$pkgname"
+  install -Dm644 "completions/_$pkgname" "$pkgdir/usr/share/zsh/site-functions/_$pkgname"
+  install -Dm644 "completions/$pkgname.fish" "$pkgdir/usr/share/fish/vendor_completions.d/$pkgname.fish"
+}

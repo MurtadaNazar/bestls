@@ -13,7 +13,16 @@ A structured and professional development plan for future enhancements to the `b
 
 ---
 
-## 🌲 v1.2 – Tree View & Filtering
+## ⚙️ v1.2 – Shell Completions ✅
+
+- [x] Add shell completions (via `clap_complete`)
+- [x] Support `completion` subcommand for generating completions
+- [x] Integration with Bash, Zsh, and Fish shells
+- [x] Added completion installation instructions
+
+---
+
+## 🌲 v1.3 – Tree View & Filtering
 
 - [ ] Add `--tree` flag for recursive directory listing
 - [ ] Implement depth limit with `--depth <n>`
@@ -26,7 +35,7 @@ A structured and professional development plan for future enhancements to the `b
 
 ---
 
-## 🧹 v1.3 – Output Customization
+## 🧹 v1.4 – Output Customization
 
 - [ ] Add `--compact` for minimal single-column output (like `ls -1`)
 - [ ] Add `--columns name,size,date,...` to customize visible columns
@@ -35,7 +44,7 @@ A structured and professional development plan for future enhancements to the `b
 
 ---
 
-## 🎨 v1.4 – Color & Theme
+## 🎨 v1.5 – Color & Theme
 
 - [ ] Color code files by extension
 - [ ] Theme support via `~/.config/bestls/config.toml`
@@ -43,12 +52,12 @@ A structured and professional development plan for future enhancements to the `b
 
 ---
 
-## ⚙️ v1.5 – Shell Completions & Config
+## 🔧 v1.6 – Advanced Configuration
 
-- [ ] Add shell completions (via `clap_complete`)
-- [ ] Support `--generate-completions` command
 - [ ] Load default settings from config file (`TOML`/`JSON`)
 - [ ] Support default sorting, columns, and color scheme via config
+- [ ] Add `--config <path>` to specify custom config file location
+- [ ] Environment variable support for common options
 
 ---
 

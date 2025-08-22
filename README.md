@@ -17,6 +17,7 @@ A fast, colorful, and Rust-powered replacement for the traditional `ls` command.
 - 👁️ **Hidden files** - View hidden files with --all flag
 - 🔒 **File permissions** - Unix-style permission display
 - 👥 **Owner info** - File owner and group information
+- 🔄 **Shell completion** - Built-in completion for Bash, Zsh, and Fish
 - 🪶 **Lightweight** - Single binary with no external dependencies
 
 ## 📦 Installation
@@ -93,6 +94,23 @@ Sort by name (default):
 bestls -s name
 ```
 
+### Shell Completions
+
+bestls provides shell completions for Bash, Zsh, and Fish shells. To enable completions:
+
+```bash
+# For Bash
+bestls completion bash > ~/.local/share/bash-completion/completions/bestls
+
+# For Zsh
+bestls completion zsh > ~/.zfunc/_bestls
+# Then add this to your .zshrc if you haven't already:
+# fpath=(~/.zfunc $fpath)
+
+# For Fish
+bestls completion fish > ~/.config/fish/completions/bestls.fish
+```
+
 ### Examples
 
 ```bash
@@ -129,8 +147,17 @@ bestls --help
 | `--all`         | `-a`  | Show hidden files               |
 | `--json`        |       | Output compact JSON format      |
 | `--json-pretty` |       | Output pretty formatted JSON    |
+| `completion`    |       | Generate shell completions      |
 | `--help`        | `-h`  | Show help information           |
 | `--version`     | `-V`  | Show version information        |
+
+### Completion Options
+
+| Shell  | Description               |
+| ------ | ------------------------- |
+| `bash` | Generate Bash completions |
+| `zsh`  | Generate Zsh completions  |
+| `fish` | Generate Fish completions |
 
 ## 🏗️ Building from Source
 
@@ -155,6 +182,7 @@ bestls --help
    ```
 
 3. (Optional) Install globally:
+
    ```bash
    cargo install --path .
    ```
@@ -177,7 +205,7 @@ This project is licensed under:
 
 ## 👨‍💻 Author
 
-**Murtaza Nazar**
+### Murtaza Nazar
 
 - Email: [mkm9284@gmail.com](mailto:mkm9284@gmail.com)
 - GitHub: [@MurtadaNazar](https://github.com/MurtadaNazar)
