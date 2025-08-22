@@ -14,6 +14,9 @@ A fast, colorful, and Rust-powered replacement for the traditional `ls` command.
 - ⚡ **Blazing fast** - Parallel metadata fetching with Rayon
 - 📏 **Human-readable** - File sizes in KB, MB, GB format
 - 🔧 **Flexible sorting** - Sort by name, size, or modification date
+- 👁️ **Hidden files** - View hidden files with --all flag
+- 🔒 **File permissions** - Unix-style permission display
+- 👥 **Owner info** - File owner and group information
 - 🪶 **Lightweight** - Single binary with no external dependencies
 
 ## 📦 Installation
@@ -101,6 +104,12 @@ bestls --json-pretty
 
 # List /etc directory sorted by modification date
 bestls -p /etc -s date
+
+# Show all files including hidden ones
+bestls -a
+
+# List files with full details (permissions, owner, group)
+bestls -a -s date
 ```
 
 ### Help
@@ -117,6 +126,7 @@ bestls --help
 | --------------- | ----- | ------------------------------- |
 | `--path`        | `-p`  | Directory path to list          |
 | `--sort`        | `-s`  | Sort by: `name`, `size`, `date` |
+| `--all`         | `-a`  | Show hidden files               |
 | `--json`        |       | Output compact JSON format      |
 | `--json-pretty` |       | Output pretty formatted JSON    |
 | `--help`        | `-h`  | Show help information           |
