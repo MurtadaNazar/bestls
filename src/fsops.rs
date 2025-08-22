@@ -7,9 +7,9 @@ use std::{fs, io, path::Path};
 use strum::Display;
 
 #[cfg(unix)]
-use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use nix::unistd::{Group, User};
 #[cfg(unix)]
-use users::{get_group_by_gid, get_user_by_uid};
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
 
 #[derive(Debug, Display, Serialize, Clone)]
 pub enum FileType {
@@ -33,8 +33,10 @@ pub struct FileEntry {
 pub fn get_files(path: &Path, include_hidden: bool) -> Result<Vec<FileEntry>, io::Error> {
     let entries: Vec<fs::DirEntry> = fs::read_dir(path)?
         .filter_map(Result::ok)
-        .filter(|entry| include_hidden || !entry.file_name().to_string_lossy().starts_with('.'))
-        .collect::<Vec<_>>();
+        .filter(|entry: &fs::DirEntry| {
+            include_hidden || !entry.file_name().to_string_lossy().starts_with('.')
+        })
+        .collect();
 
     let files: Vec<FileEntry> = entries
         .par_iter()
@@ -47,7 +49,6 @@ pub fn get_files(path: &Path, include_hidden: bool) -> Result<Vec<FileEntry>, io
 
 fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
     let metadata: fs::Metadata = entry.metadata()?;
-
     let file_type: fs::FileType = metadata.file_type();
 
     let modified: String = metadata
@@ -59,7 +60,8 @@ fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
         .unwrap_or_default();
 
     // Permissions
-    let permissions: String = if cfg!(unix) {
+    #[cfg(unix)]
+    let permissions: String = {
         let mode: u32 = metadata.permissions().mode();
         format!(
             "{}{}{}{}{}{}{}{}{}",
@@ -73,12 +75,27 @@ fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
             if mode & 0o002 != 0 { 'w' } else { '-' },
             if mode & 0o001 != 0 { 'x' } else { '-' },
         )
-    } else {
-        "N/A".into()
     };
 
-    // Owner / Group
+    #[cfg(windows)]
+    let permissions = if metadata.permissions().readonly() {
+        "r--".into()
+    } else {
+        "rw-".into()
+    };
+
+    #[cfg(not(any(unix, windows)))]
+    let permissions = "N/A".to_string();
+
+    // Owner / Group - Using nix crate instead of users
+    #[cfg(unix)]
     let (owner_name, group_name) = get_owner_group(&metadata);
+
+    #[cfg(windows)]
+    let (owner_name, group_name) = ("Owner".into(), "Group".into());
+
+    #[cfg(not(any(unix, windows)))]
+    let (owner_name, group_name) = ("N/A".into(), "N/A".into());
 
     Ok(FileEntry {
         name: entry.file_name().to_string_lossy().to_string(),
@@ -102,18 +119,22 @@ fn map_data(entry: &fs::DirEntry) -> Result<FileEntry, io::Error> {
 
 #[cfg(unix)]
 fn get_owner_group(metadata: &fs::Metadata) -> (String, String) {
-    let uid: u32 = metadata.uid();
-    let gid: u32 = metadata.gid();
-    let user: String = get_user_by_uid(uid)
-        .map(|u: users::User| u.name().to_string_lossy().into_owned())
-        .unwrap_or(uid.to_string());
-    let group: String = get_group_by_gid(gid)
-        .map(|g: users::Group| g.name().to_string_lossy().into_owned())
-        .unwrap_or(gid.to_string());
-    (user, group)
-}
+    use nix::unistd::{Gid, Uid};
 
-#[cfg(not(unix))]
-fn get_owner_group(_metadata: &fs::Metadata) -> (String, String) {
-    ("N/A".into(), "N/A".into())
+    let uid: Uid = Uid::from(metadata.uid());
+    let gid: Gid = Gid::from(metadata.gid());
+
+    let user: String = User::from_uid(uid)
+        .ok()
+        .flatten()
+        .map(|u: User| u.name)
+        .unwrap_or_else(|| uid.to_string());
+
+    let group: String = Group::from_gid(gid)
+        .ok()
+        .flatten()
+        .map(|g: Group| g.name)
+        .unwrap_or_else(|| gid.to_string());
+
+    (user, group)
 }
