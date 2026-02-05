@@ -70,7 +70,6 @@ mod table;
 use clap::Parser;
 use cli::{Cli, Commands, OutputFormat, SortBy, ThemeSubcommand};
 use color::{create_sample_config, load_theme};
-use dirs;
 use fsops::{
     get_files, get_files_recursive, matches_extension, matches_pattern, parse_size, FileEntry,
 };
