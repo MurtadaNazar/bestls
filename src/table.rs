@@ -254,7 +254,11 @@ fn format_compact_inner(entries: &[FileEntry]) -> String {
 
 /// Format compact output as string
 ///
-/// Deprecated: Use `format_table(..., compact = true, ...)` instead
+/// Deprecated: Use `format_table(..., compact = true, ...)` instead.
+///
+/// Kept for backward compatibility with library consumers.
+/// Marked with #[allow(dead_code)] because the binary uses format_table instead,
+/// but this is part of the public API.
 #[allow(dead_code)]
 #[deprecated(
     since = "1.3.0",
@@ -324,7 +328,11 @@ pub fn format_table(
 
 /// Print table output directly to stdout
 ///
-/// Deprecated: Use `format_table` and print the result for better testability and flexibility
+/// Deprecated: Use `format_table` and print the result for better testability and flexibility.
+///
+/// Kept for backward compatibility with library consumers.
+/// Marked with #[allow(dead_code)] because the binary doesn't use it,
+/// but this is part of the public API.
 #[allow(dead_code)]
 #[deprecated(
     since = "1.3.0",

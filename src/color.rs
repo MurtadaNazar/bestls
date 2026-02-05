@@ -297,6 +297,9 @@ impl ThemeConfig {
 }
 
 /// Get color for a file based on type and extension
+///
+/// Used by library consumers and in tests. Marked with #[allow(dead_code)]
+/// because the binary doesn't use it directly, but it's part of the public API.
 #[allow(dead_code)]
 pub fn get_file_color(file_type: &FileType, filename: &str, theme: &Theme) -> ColorValue {
     match file_type {
@@ -317,7 +320,6 @@ pub fn get_file_color(file_type: &FileType, filename: &str, theme: &Theme) -> Co
 }
 
 /// Create a sample config file for the user
-#[allow(dead_code)]
 pub fn create_sample_config() -> Result<PathBuf, Box<dyn std::error::Error>> {
     let config_dir = dirs::config_dir()
         .ok_or("Could not determine config directory")?
