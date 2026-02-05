@@ -87,20 +87,47 @@ struct FilterConfig {
 
 impl FilterConfig {
     /// Build filter configuration from CLI options, parsing once
-    fn from_cli(cli: &Cli) -> Self {
+    /// Returns None if size parsing fails
+    fn from_cli(cli: &Cli) -> Option<Self> {
+        // Pre-normalize extensions: lowercase and strip leading '.'
         let exts = cli.filter_ext.as_ref().map(|ext_filter| {
             ext_filter
                 .split(',')
-                .map(|s| s.trim().to_string())
+                .map(|s| s.trim().trim_start_matches('.').to_lowercase())
                 .collect::<Vec<_>>()
         });
 
-        FilterConfig {
+        // Parse size strings once
+        let min_size = if let Some(min_str) = cli.min_size.as_deref() {
+            match parse_size(min_str) {
+                Ok(size) => Some(size),
+                Err(e) => {
+                    eprintln!("Warning: invalid --min-size value: {}", e);
+                    return None;
+                }
+            }
+        } else {
+            None
+        };
+
+        let max_size = if let Some(max_str) = cli.max_size.as_deref() {
+            match parse_size(max_str) {
+                Ok(size) => Some(size),
+                Err(e) => {
+                    eprintln!("Warning: invalid --max-size value: {}", e);
+                    return None;
+                }
+            }
+        } else {
+            None
+        };
+
+        Some(FilterConfig {
             exts,
             name_pattern: cli.filter_name.clone(),
-            min_size: cli.min_size.as_deref().and_then(parse_size),
-            max_size: cli.max_size.as_deref().and_then(parse_size),
-        }
+            min_size,
+            max_size,
+        })
     }
 }
 
@@ -171,7 +198,10 @@ fn main() {
     let include_hidden: bool = cli.all;
 
     // Precompute filter configuration once
-    let filter_cfg = FilterConfig::from_cli(&cli);
+    let filter_cfg = match FilterConfig::from_cli(&cli) {
+        Some(cfg) => cfg,
+        None => return, // Error already printed by from_cli
+    };
 
     // Get files (tree or flat)
     let get_result = load_files(&cli, &path, include_hidden);
