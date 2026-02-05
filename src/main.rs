@@ -168,12 +168,12 @@ fn main() {
             }
 
             // Generate output based on selected format
-             let output = match cli.format {
-                 OutputFormat::Json => {
-                     serde_json::to_string(&files).unwrap_or_else(|_| "cannot parse to JSON".into())
-                 }
-                 OutputFormat::JsonPretty => serde_json::to_string_pretty(&files)
-                     .unwrap_or_else(|_| "cannot parse to JSON".into()),
+            let output = match cli.format {
+                OutputFormat::Json => {
+                    serde_json::to_string(&files).unwrap_or_else(|_| "cannot parse to JSON".into())
+                }
+                OutputFormat::JsonPretty => serde_json::to_string_pretty(&files)
+                    .unwrap_or_else(|_| "cannot parse to JSON".into()),
                 OutputFormat::Table => {
                     // Handle legacy json/json_pretty flags for backward compatibility
                     if cli.json_pretty {

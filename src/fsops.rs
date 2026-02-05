@@ -661,7 +661,7 @@ fn collect_files_recursive(
         })
         .collect();
 
-        let mut file_entries: Vec<FileEntry> = entries
+    let mut file_entries: Vec<FileEntry> = entries
         .par_iter()
         .map(|entry| {
             let file_entry = map_data(entry);
@@ -670,9 +670,9 @@ fn collect_files_recursive(
         .filter_map(Result::ok)
         .collect();
 
-        files.append(&mut file_entries);
+    files.append(&mut file_entries);
 
-        // Recurse into directories
+    // Recurse into directories
     if current_depth < max_depth.unwrap_or(usize::MAX) {
         for entry in entries {
             if let Ok(metadata) = entry.metadata() {
@@ -686,8 +686,8 @@ fn collect_files_recursive(
                     );
                 }
             }
-            }
-            }
+        }
+    }
 
-            Ok(())
-            }
+    Ok(())
+}
