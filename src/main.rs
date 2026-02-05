@@ -63,11 +63,13 @@
 //! ```
 
 mod cli;
+mod color;
 mod fsops;
 mod table;
 
 use clap::Parser;
 use cli::{Cli, Commands, OutputFormat, SortBy};
+use color::load_theme;
 use fsops::{
     get_files, get_files_recursive, matches_extension, matches_pattern, parse_size, FileEntry,
 };
@@ -232,6 +234,9 @@ fn main() {
         return;
     }
 
+    // Load theme for color output
+    let theme = load_theme();
+
     let path: PathBuf = cli
         .path
         .as_deref()
@@ -279,7 +284,13 @@ fn main() {
                     .unwrap_or_else(|_| "cannot parse to JSON".into()),
                 OutputFormat::Table => {
                     // Format table/compact output as string
-                    format_table(&files, cli.columns.clone(), cli.compact, !cli.no_color)
+                    format_table(
+                        &files,
+                        cli.columns.clone(),
+                        cli.compact,
+                        !cli.no_color,
+                        Some(&theme),
+                    )
                 }
             };
 

@@ -73,10 +73,11 @@
 //! - Help users quickly identify different types of information
 //! - Maintain professional appearance while being visually helpful
 
+use crate::color::Theme;
 use crate::fsops::FileEntry;
 use std::collections::HashSet;
 use tabled::settings::object::{Columns, Rows};
-use tabled::settings::{Color, Style};
+use tabled::settings::Style;
 use tabled::{Table, Tabled};
 
 /// Internal representation of a file entry optimized for table display.
@@ -270,11 +271,13 @@ pub fn format_compact(entries: &[FileEntry]) -> String {
 /// * `columns` - Optional column selection (reserved for future use)
 /// * `compact` - If true, return single-column format
 /// * `use_color` - If true, apply color styling
+/// * `theme` - Optional theme for colors (uses default if None)
 pub fn format_table(
     entries: &[FileEntry],
     columns: Option<String>,
     compact: bool,
     use_color: bool,
+    theme: Option<&Theme>,
 ) -> String {
     if compact {
         return format_compact_inner(entries);
@@ -300,10 +303,20 @@ pub fn format_table(
     table.with(Style::rounded());
 
     if use_color {
-        table.modify(Columns::first(), Color::FG_BRIGHT_CYAN);
-        table.modify(Columns::one(2), Color::FG_BRIGHT_MAGENTA);
-        table.modify(Columns::one(3), Color::FG_BRIGHT_YELLOW);
-        table.modify(Rows::first(), Color::FG_BRIGHT_GREEN);
+        // Use provided theme or create a default one with longer lifetime
+        let default_theme;
+        let active_theme = match theme {
+            Some(t) => t,
+            None => {
+                default_theme = Theme::default();
+                &default_theme
+            }
+        };
+
+        table.modify(Columns::first(), active_theme.table.name.to_tabled_color());
+        table.modify(Columns::one(2), active_theme.table.size.to_tabled_color());
+        table.modify(Columns::one(3), active_theme.table.date.to_tabled_color());
+        table.modify(Rows::first(), active_theme.table.header.to_tabled_color());
     }
 
     table.to_string()
@@ -323,5 +336,8 @@ pub fn print_table(
     compact: bool,
     use_color: bool,
 ) {
-    println!("{}", format_table(&entries, columns, compact, use_color));
+    println!(
+        "{}",
+        format_table(&entries, columns, compact, use_color, None)
+    );
 }
