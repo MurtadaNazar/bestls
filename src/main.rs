@@ -71,24 +71,46 @@ use cli::{Cli, Commands, OutputFormat, SortBy};
 use fsops::{
     get_files, get_files_recursive, matches_extension, matches_pattern, parse_size, FileEntry,
 };
+use glob::Pattern;
 use owo_colors::OwoColorize;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use table::format_table;
 
+/// Error type for filter configuration
+#[derive(Debug)]
+#[allow(clippy::enum_variant_names)]
+enum ConfigError {
+    InvalidGlobPattern(String),
+    InvalidMinSize(String),
+    InvalidMaxSize(String),
+}
+
+impl std::fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigError::InvalidGlobPattern(e) => write!(f, "invalid glob pattern: {}", e),
+            ConfigError::InvalidMinSize(e) => write!(f, "invalid --min-size value: {}", e),
+            ConfigError::InvalidMaxSize(e) => write!(f, "invalid --max-size value: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for ConfigError {}
+
 /// Precomputed filter configuration to avoid repeated parsing per file
 struct FilterConfig {
     exts: Option<Vec<String>>,
-    name_pattern: Option<String>,
+    name_pattern: Option<Pattern>,
     min_size: Option<u64>,
     max_size: Option<u64>,
 }
 
 impl FilterConfig {
     /// Build filter configuration from CLI options, parsing once
-    /// Returns None if size parsing fails
-    fn from_cli(cli: &Cli) -> Option<Self> {
+    /// Returns Err if any configuration is invalid
+    fn from_cli(cli: &Cli) -> Result<Self, ConfigError> {
         // Pre-normalize extensions: lowercase and strip leading '.'
         let exts = cli.filter_ext.as_ref().map(|ext_filter| {
             ext_filter
@@ -97,14 +119,25 @@ impl FilterConfig {
                 .collect::<Vec<_>>()
         });
 
+        // Compile and validate glob pattern once
+        let name_pattern = match cli.filter_name.as_deref() {
+            Some(pattern_str) => match Pattern::new(pattern_str) {
+                Ok(pattern) => Some(pattern),
+                Err(e) => {
+                    return Err(ConfigError::InvalidGlobPattern(format!(
+                        "invalid glob pattern '{}': {}",
+                        pattern_str, e
+                    )))
+                }
+            },
+            None => None,
+        };
+
         // Parse size strings once
         let min_size = if let Some(min_str) = cli.min_size.as_deref() {
             match parse_size(min_str) {
                 Ok(size) => Some(size),
-                Err(e) => {
-                    eprintln!("Warning: invalid --min-size value: {}", e);
-                    return None;
-                }
+                Err(e) => return Err(ConfigError::InvalidMinSize(e.to_string())),
             }
         } else {
             None
@@ -113,18 +146,15 @@ impl FilterConfig {
         let max_size = if let Some(max_str) = cli.max_size.as_deref() {
             match parse_size(max_str) {
                 Ok(size) => Some(size),
-                Err(e) => {
-                    eprintln!("Warning: invalid --max-size value: {}", e);
-                    return None;
-                }
+                Err(e) => return Err(ConfigError::InvalidMaxSize(e.to_string())),
             }
         } else {
             None
         };
 
-        Some(FilterConfig {
+        Ok(FilterConfig {
             exts,
-            name_pattern: cli.filter_name.clone(),
+            name_pattern,
             min_size,
             max_size,
         })
@@ -199,8 +229,11 @@ fn main() {
 
     // Precompute filter configuration once
     let filter_cfg = match FilterConfig::from_cli(&cli) {
-        Some(cfg) => cfg,
-        None => return, // Error already printed by from_cli
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(2);
+        }
     };
 
     // Get files (tree or flat)

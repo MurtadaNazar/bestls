@@ -296,8 +296,8 @@ $ bestls --no-color
 - ✅ src/main.rs - Filter application and output handling
 - ✅ src/table.rs - Compact/color support
 - ✅ Cargo.toml - Version bump to 1.3.0
-- ✅ TODO.md - Marked v1.3, v1.4 complete
-- ✅ VERSION_POLICY.md - New version management policy
+- ✅ docs/TODO.md - Marked v1.3, v1.4 complete
+- ✅ docs/VERSION_POLICY.md - New version management policy
 
 ---
 
