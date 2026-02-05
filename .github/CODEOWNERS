@@ -1,0 +1,8 @@
+# Global code owners
+* @MurtadaNazar
+
+# Specific component owners
+/src/cli.rs @MurtadaNazar
+/src/fsops.rs @MurtadaNazar
+/.github/ @MurtadaNazar
+/Cargo.toml @MurtadaNazar
