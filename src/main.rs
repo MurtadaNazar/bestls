@@ -85,6 +85,7 @@ enum ConfigError {
     InvalidGlobPattern(String),
     InvalidMinSize(String),
     InvalidMaxSize(String),
+    SizeRangeInvalid(String),
 }
 
 impl std::fmt::Display for ConfigError {
@@ -93,6 +94,7 @@ impl std::fmt::Display for ConfigError {
             ConfigError::InvalidGlobPattern(e) => write!(f, "invalid glob pattern: {}", e),
             ConfigError::InvalidMinSize(e) => write!(f, "invalid --min-size value: {}", e),
             ConfigError::InvalidMaxSize(e) => write!(f, "invalid --max-size value: {}", e),
+            ConfigError::SizeRangeInvalid(e) => write!(f, "{}", e),
         }
     }
 }
@@ -151,6 +153,16 @@ impl FilterConfig {
         } else {
             None
         };
+
+        // Validate that min_size <= max_size
+        if let (Some(min), Some(max)) = (min_size, max_size) {
+            if min > max {
+                return Err(ConfigError::SizeRangeInvalid(format!(
+                    "--min-size ({}) must be less than or equal to --max-size ({})",
+                    min, max
+                )));
+            }
+        }
 
         Ok(FilterConfig {
             exts,
