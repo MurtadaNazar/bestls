@@ -552,6 +552,7 @@ pub enum SizeParseError {
     InvalidNumber(String),
     InvalidUnit(String),
     Overflow,
+    NegativeValue { value: String },
 }
 
 impl fmt::Display for SizeParseError {
@@ -569,6 +570,13 @@ impl fmt::Display for SizeParseError {
                 )
             }
             SizeParseError::Overflow => write!(f, "size value exceeds maximum ({})", u64::MAX),
+            SizeParseError::NegativeValue { value } => {
+                write!(
+                    f,
+                    "invalid size value '{}' (size must be non-negative)",
+                    value
+                )
+            }
         }
     }
 }
@@ -621,12 +629,11 @@ pub fn parse_size(size_str: &str) -> Result<u64, SizeParseError> {
         .parse()
         .map_err(|_| SizeParseError::InvalidNumber(num_str.to_string()))?;
 
-    // Reject negative values
+    // Reject negative values (semantic error: input is numeric but disallowed)
     if num < 0.0 {
-        return Err(SizeParseError::InvalidNumber(format!(
-            "negative value {}",
-            num
-        )));
+        return Err(SizeParseError::NegativeValue {
+            value: num_str.to_string(),
+        });
     }
 
     // Check for overflow: ensure num * multiplier <= u64::MAX

@@ -269,25 +269,17 @@ fn main() {
                 }),
             }
 
-            // Generate output based on selected format
-            let output = match cli.format {
+            // Generate output based on effective format, normalizing legacy flags to a single source of truth
+            let effective_format = cli.effective_format();
+            let output = match effective_format {
                 OutputFormat::Json => {
                     serde_json::to_string(&files).unwrap_or_else(|_| "cannot parse to JSON".into())
                 }
                 OutputFormat::JsonPretty => serde_json::to_string_pretty(&files)
                     .unwrap_or_else(|_| "cannot parse to JSON".into()),
                 OutputFormat::Table => {
-                    // Handle legacy json/json_pretty flags for backward compatibility
-                    if cli.json_pretty {
-                        serde_json::to_string_pretty(&files)
-                            .unwrap_or_else(|_| "cannot parse to JSON".into())
-                    } else if cli.json {
-                        serde_json::to_string(&files)
-                            .unwrap_or_else(|_| "cannot parse to JSON".into())
-                    } else {
-                        // Format table/compact output as string
-                        format_table(&files, cli.columns.clone(), cli.compact, !cli.no_color)
-                    }
+                    // Format table/compact output as string
+                    format_table(&files, cli.columns.clone(), cli.compact, !cli.no_color)
                 }
             };
 

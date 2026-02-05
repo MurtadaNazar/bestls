@@ -7,7 +7,7 @@
 //! ## Key Components
 //!
 //! - [`DisplayEntry`]: Internal struct for table formatting (derived from [`FileEntry`])
-//! - [`print_table`]: Main function for rendering colorized tables to stdout
+//! - [`format_table`]: Main function for rendering and formatting tables as strings
 //!
 //! ## Features
 //!
@@ -30,15 +30,16 @@
 //! ### Basic Usage
 //!
 //! ```rust
-//! use bestls::table::print_table;
+//! use bestls::table::format_table;
 //! use bestls::fsops::{get_files, FileEntry};
 //! use std::path::Path;
 //!
 //! let path = Path::new(".");
 //! let files = get_files(&path, false)?;
 //!
-//! // Print formatted table to stdout
-//! print_table(files);
+//! // Format and print table
+//! let output = format_table(&files, None, false, true);
+//! println!("{}", output);
 //! # Ok::<(), std::io::Error>(())
 //! ```
 //!

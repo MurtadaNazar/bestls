@@ -110,7 +110,7 @@ use std::path::PathBuf;
 /// * `Table` - Pretty table format (default)
 /// * `Json` - Compact JSON format
 /// * `JsonPretty` - Pretty-printed JSON format
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum)]
 #[clap(rename_all = "kebab-case")]
 pub enum OutputFormat {
     /// Pretty table format (default)
@@ -157,14 +157,14 @@ pub struct Cli {
     #[arg(
         short = 'j',
         long = "json",
-        help = "Output file list in compact JSON format.",
+        help = "Output file list in compact JSON format (deprecated, use --format json instead).",
         default_value_t = false
     )]
     pub json: bool,
 
     #[arg(
         long = "json-pretty",
-        help = "Output file list in pretty-printed JSON format.",
+        help = "Output file list in pretty-printed JSON format (deprecated, use --format json-pretty instead).",
         default_value_t = false
     )]
     pub json_pretty: bool,
@@ -212,7 +212,7 @@ pub struct Cli {
         value_name = "FORMAT",
         value_enum,
         default_value = "table",
-        help = "Output format: table, json, or json-pretty"
+        help = "Output format: table, json, or json-pretty (legacy --json/--json-pretty flags override this for backward compatibility)"
     )]
     pub format: OutputFormat,
 
@@ -233,7 +233,8 @@ pub struct Cli {
     #[arg(
         long = "depth",
         value_name = "N",
-        help = "Maximum depth for tree traversal (only with --tree)."
+        requires = "tree",
+        help = "Maximum depth for tree traversal (requires --tree)."
     )]
     pub depth: Option<usize>,
 
@@ -371,6 +372,51 @@ pub enum Commands {
 }
 
 impl Cli {
+    /// Compute the effective output format, honoring legacy flags.
+    ///
+    /// This method resolves the output format by checking legacy flags (`--json`, `--json-pretty`)
+    /// first for backward compatibility, and falling back to the `--format` option if no legacy flags
+    /// are set. This centralizes the logic for handling the "two knobs for one concept" issue.
+    ///
+    /// # Returns
+    ///
+    /// The effective `OutputFormat` to use for output rendering.
+    ///
+    /// # Behavior
+    ///
+    /// - If `--json-pretty` is set, returns `OutputFormat::JsonPretty`
+    /// - Else if `--json` is set, returns `OutputFormat::Json`
+    /// - Otherwise returns the value of `--format`
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use bestls::cli::Cli;
+    /// use clap::Parser;
+    ///
+    /// // Example with --json flag
+    /// // CLI args: bestls --json
+    /// // Result: OutputFormat::Json (legacy flag takes precedence)
+    ///
+    /// // Example with --format option
+    /// // CLI args: bestls --format json-pretty
+    /// // Result: OutputFormat::JsonPretty
+    ///
+    /// // Example with both (legacy takes precedence)
+    /// // CLI args: bestls --format table --json
+    /// // Result: OutputFormat::Json (legacy flag overrides)
+    /// ```
+    pub fn effective_format(&self) -> OutputFormat {
+        // Legacy flags override `--format` for compatibility
+        if self.json_pretty {
+            OutputFormat::JsonPretty
+        } else if self.json {
+            OutputFormat::Json
+        } else {
+            self.format
+        }
+    }
+
     /// Generate and output shell completion scripts to stdout.
     ///
     /// This method creates completion scripts for the specified shell using `clap_complete`.
