@@ -225,6 +225,10 @@ struct DisplayEntry {
 ///
 /// # Returns
 /// A HashSet of valid column names
+///
+/// # Note
+/// This function is reserved for future column filtering implementation.
+#[allow(dead_code)]
 pub fn parse_columns(cols: &str) -> HashSet<String> {
     cols.split(',')
         .map(|s| s.trim().to_lowercase())
@@ -237,8 +241,8 @@ pub fn parse_columns(cols: &str) -> HashSet<String> {
         .collect()
 }
 
-/// Format compact output as string
-pub fn format_compact(entries: &[FileEntry]) -> String {
+/// Format compact output as string (internal helper)
+fn format_compact_inner(entries: &[FileEntry]) -> String {
     entries
         .iter()
         .map(|f| f.name.clone())
@@ -246,11 +250,23 @@ pub fn format_compact(entries: &[FileEntry]) -> String {
         .join("\n")
 }
 
+/// Format compact output as string
+///
+/// Deprecated: Use `format_table(..., compact = true, ...)` instead
+#[allow(dead_code)]
+#[deprecated(
+    since = "1.3.0",
+    note = "use format_table(..., compact = true, ...) instead"
+)]
+pub fn format_compact(entries: &[FileEntry]) -> String {
+    format_compact_inner(entries)
+}
+
 /// Format table output as a string
 ///
 /// # Arguments
 /// * `entries` - Vector of file entries to format
-/// * `columns` - Optional column selection (currently parsed but full filtering not yet implemented)
+/// * `columns` - Optional column selection (reserved for future use)
 /// * `compact` - If true, return single-column format
 /// * `use_color` - If true, apply color styling
 pub fn format_table(
@@ -260,10 +276,11 @@ pub fn format_table(
     use_color: bool,
 ) -> String {
     if compact {
-        return format_compact(entries);
+        return format_compact_inner(entries);
     }
 
-    let _selected_cols = columns.as_ref().map(|c| parse_columns(c));
+    // Column selection reserved for future implementation; not currently wired up
+    let _ = columns;
 
     let data: Vec<DisplayEntry> = entries
         .iter()

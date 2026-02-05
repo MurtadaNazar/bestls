@@ -577,6 +577,12 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         }
     };
 
+    // Reject negative values
+    if num < 0.0 {
+        eprintln!("Warning: size value must be non-negative, got {}", num);
+        return None;
+    }
+
     let multiplier = match unit {
         "B" => 1u64,
         "KB" | "K" => 1024u64,
@@ -592,18 +598,31 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         }
     };
 
-    Some((num * multiplier as f64) as u64)
+    // Check for overflow: ensure num * multiplier <= u64::MAX
+    let result = num * multiplier as f64;
+    if result > u64::MAX as f64 {
+        eprintln!(
+            "Warning: size value {} {} exceeds maximum ({})",
+            num_part.trim(),
+            unit,
+            u64::MAX
+        );
+        return None;
+    }
+
+    Some(result as u64)
 }
 
-/// Check if filename matches extension filter
+/// Check if filename matches extension filter (case-insensitive)
 pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
     if extensions.is_empty() {
         return true;
     }
 
+    let filename_lower = filename.to_lowercase();
     extensions.iter().any(|ext| {
-        let ext = ext.trim_start_matches('.');
-        filename.ends_with(&format!(".{}", ext))
+        let ext_lower = ext.trim_start_matches('.').to_lowercase();
+        filename_lower.ends_with(&format!(".{}", ext_lower))
     })
 }
 
@@ -674,13 +693,21 @@ fn collect_files_recursive(
         for entry in entries {
             if let Ok(metadata) = entry.metadata() {
                 if metadata.is_dir() {
-                    let _ = collect_files_recursive(
+                    // Propagate errors from subdirectory traversal instead of silently ignoring
+                    if let Err(e) = collect_files_recursive(
                         &entry.path(),
                         include_hidden,
                         max_depth,
                         current_depth + 1,
                         files,
-                    );
+                    ) {
+                        // Log warning but continue with other directories
+                        eprintln!(
+                            "Warning: failed to read directory '{}': {}",
+                            entry.path().display(),
+                            e
+                        );
+                    }
                 }
             }
         }

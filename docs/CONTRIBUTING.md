@@ -176,7 +176,7 @@ ci(workflow): add security audit step
 
 ## Additional Notes
 
-- Follow [Pull Request Review Checklist](docs/REVIEW_CHECKLIST.md) for reviewer guidance
+- Follow [Pull Request Review Checklist](REVIEW_CHECKLIST.md) for reviewer guidance
 - Always make sure your PR passes CI checks and is up-to-date with the target branch
 - Be respectful, constructive, and helpful in all interactions
 

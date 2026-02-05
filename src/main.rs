@@ -74,48 +74,76 @@ use fsops::{
 use owo_colors::OwoColorize;
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use table::format_table;
 
-/// Apply all filters to a file entry based on CLI options
-fn passes_filters(f: &FileEntry, cli: &Cli) -> bool {
+/// Precomputed filter configuration to avoid repeated parsing per file
+struct FilterConfig {
+    exts: Option<Vec<String>>,
+    name_pattern: Option<String>,
+    min_size: Option<u64>,
+    max_size: Option<u64>,
+}
+
+impl FilterConfig {
+    /// Build filter configuration from CLI options, parsing once
+    fn from_cli(cli: &Cli) -> Self {
+        let exts = cli.filter_ext.as_ref().map(|ext_filter| {
+            ext_filter
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect::<Vec<_>>()
+        });
+
+        FilterConfig {
+            exts,
+            name_pattern: cli.filter_name.clone(),
+            min_size: cli.min_size.as_deref().and_then(parse_size),
+            max_size: cli.max_size.as_deref().and_then(parse_size),
+        }
+    }
+}
+
+/// Apply all filters to a file entry based on precomputed filter configuration
+fn passes_filters(f: &FileEntry, cfg: &FilterConfig) -> bool {
     // Extension filter
-    if let Some(ref ext_filter) = cli.filter_ext {
-        let exts: Vec<String> = ext_filter
-            .split(',')
-            .map(|s| s.trim().to_string())
-            .collect();
-        if !matches_extension(&f.name, &exts) {
+    if let Some(ref exts) = cfg.exts {
+        if !matches_extension(&f.name, exts) {
             return false;
         }
     }
 
     // Name pattern filter
-    if let Some(ref name_pattern) = cli.filter_name {
+    if let Some(ref name_pattern) = cfg.name_pattern {
         if !matches_pattern(&f.name, name_pattern) {
             return false;
         }
     }
 
     // Minimum size filter
-    if let Some(ref min) = cli.min_size {
-        if let Some(min_bytes) = parse_size(min) {
-            if f.len_bytes < min_bytes {
-                return false;
-            }
+    if let Some(min) = cfg.min_size {
+        if f.len_bytes < min {
+            return false;
         }
     }
 
     // Maximum size filter
-    if let Some(ref max) = cli.max_size {
-        if let Some(max_bytes) = parse_size(max) {
-            if f.len_bytes > max_bytes {
-                return false;
-            }
+    if let Some(max) = cfg.max_size {
+        if f.len_bytes > max {
+            return false;
         }
     }
 
     true
+}
+
+/// Load files from the specified path (tree or flat)
+fn load_files(cli: &Cli, path: &Path, include_hidden: bool) -> std::io::Result<Vec<FileEntry>> {
+    if cli.tree {
+        get_files_recursive(path, include_hidden, cli.depth)
+    } else {
+        get_files(path, include_hidden)
+    }
 }
 
 /// Main entry point for the bestls application.
@@ -142,17 +170,16 @@ fn main() {
         .unwrap_or_else(|| PathBuf::from("."));
     let include_hidden: bool = cli.all;
 
+    // Precompute filter configuration once
+    let filter_cfg = FilterConfig::from_cli(&cli);
+
     // Get files (tree or flat)
-    let get_result = if cli.tree {
-        get_files_recursive(&path, include_hidden, cli.depth)
-    } else {
-        get_files(&path, include_hidden)
-    };
+    let get_result = load_files(&cli, &path, include_hidden);
 
     match get_result {
         Ok(mut files) => {
             // Apply all configured filters
-            files.retain(|f| passes_filters(f, &cli));
+            files.retain(|f| passes_filters(f, &filter_cfg));
 
             // Apply sorting
             match cli.sort_by {
