@@ -101,7 +101,7 @@ use tabled::{Table, Tabled};
 /// # Design
 ///
 /// This struct is intentionally kept private as it's an implementation detail.
-/// External code should use [`print_table`] rather than creating [`DisplayEntry`] instances directly.
+/// External code should use [`format_table`] to create output strings that can be printed.
 ///
 /// # Attributes
 ///
@@ -165,7 +165,7 @@ struct DisplayEntry {
 /// ## Basic Table Display
 ///
 /// ```rust
-/// use bestls::table::print_table;
+/// use bestls::table::format_table;
 /// use bestls::fsops::{get_files, FileEntry, FileType};
 /// use std::path::Path;
 ///
@@ -173,15 +173,16 @@ struct DisplayEntry {
 /// let path = Path::new(".");
 /// let files = get_files(&path, false)?;
 ///
-/// // Display as formatted table
-/// print_table(files);
+/// // Format as a table string with default theme
+/// let output = format_table(&files, None, false, true, None);
+/// println!("{}", output);
 /// # Ok::<(), std::io::Error>(())
 /// ```
 ///
 /// ## With Custom File Entries
 ///
 /// ```rust
-/// use bestls::table::print_table;
+/// use bestls::table::format_table;
 /// use bestls::fsops::{FileEntry, FileType};
 ///
 /// let entries = vec![
@@ -197,7 +198,8 @@ struct DisplayEntry {
 ///     }
 /// ];
 ///
-/// print_table(entries);
+/// let output = format_table(&entries, None, false, true, None);
+/// println!("{}", output);
 /// ```
 ///
 /// # Performance
@@ -250,22 +252,6 @@ fn format_compact_inner(entries: &[FileEntry]) -> String {
         .map(|f| f.name.clone())
         .collect::<Vec<_>>()
         .join("\n")
-}
-
-/// Format compact output as string
-///
-/// Deprecated: Use `format_table(..., compact = true, ...)` instead.
-///
-/// Kept for backward compatibility with library consumers.
-/// Marked with #[allow(dead_code)] because the binary uses format_table instead,
-/// but this is part of the public API.
-#[allow(dead_code)]
-#[deprecated(
-    since = "1.3.0",
-    note = "use format_table(..., compact = true, ...) instead"
-)]
-pub fn format_compact(entries: &[FileEntry]) -> String {
-    format_compact_inner(entries)
 }
 
 /// Format table output as a string
@@ -324,28 +310,4 @@ pub fn format_table(
     }
 
     table.to_string()
-}
-
-/// Print table output directly to stdout
-///
-/// Deprecated: Use `format_table` and print the result for better testability and flexibility.
-///
-/// Kept for backward compatibility with library consumers.
-/// Marked with #[allow(dead_code)] because the binary doesn't use it,
-/// but this is part of the public API.
-#[allow(dead_code)]
-#[deprecated(
-    since = "1.3.0",
-    note = "use format_table() to get the string and print it yourself"
-)]
-pub fn print_table(
-    entries: Vec<FileEntry>,
-    columns: Option<String>,
-    compact: bool,
-    use_color: bool,
-) {
-    println!(
-        "{}",
-        format_table(&entries, columns, compact, use_color, None)
-    );
 }
