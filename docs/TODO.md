@@ -22,25 +22,26 @@ A structured and professional development plan for future enhancements to the `b
 
 ---
 
-## 🌲 v1.3 – Tree View & Filtering
+## ✅ v1.3 – Tree View & Filtering
 
-- [ ] Add `--tree` flag for recursive directory listing
-- [ ] Implement depth limit with `--depth <n>`
-- [ ] Add filtering options:
-  - `--filter-ext <ext>`
-  - `--filter-name <pattern>`
-- [ ] Add size-based filters with human-readable units:
-  - `--min-size <size>`
-  - `--max-size <size>`
+- [x] Add `--tree` flag for recursive directory listing
+- [x] Implement depth limit with `--depth <n>`
+- [x] Add filtering options:
+  - [x] `--filter-ext <ext>` (comma-separated extensions)
+  - [x] `--filter-name <pattern>` (glob-style patterns)
+- [x] Add size-based filters with human-readable units:
+  - [x] `--min-size <size>` (e.g., 1KB, 1MB, 100B)
+  - [x] `--max-size <size>` (e.g., 1KB, 1MB, 100B)
 
 ---
 
-## 🧹 v1.4 – Output Customization
+## ✅ v1.4 – Output Customization
 
-- [ ] Add `--compact` for minimal single-column output (like `ls -1`)
-- [ ] Add `--columns name,size,date,...` to customize visible columns
-- [ ] Add `--out <file>` option to export output
-- [ ] Add `--format json|table` override for flexible output formats
+- [x] Add `--compact` for minimal single-column output (like `ls -1`)
+- [x] Add `--columns name,size,date,...` to customize visible columns
+- [x] Add `--out <file>` option to export output
+- [x] Add `--format json|table` override for flexible output formats
+- [x] Add `--no-color` flag to disable colored output
 
 ---
 

@@ -1,24 +1,29 @@
 # bestls
 
-[![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
+[![Rust](https://img.shields.io/badge/rust-1.85+-orange.svg)](https://www.rust-lang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GitHub Discussions](https://img.shields.io/github/discussions/MurtadaNazar/bestls?color=blue&logo=github)](https://github.com/MurtadaNazar/bestls/discussions)
+[![Version: 1.3.0](https://img.shields.io/badge/version-1.3.0-blue.svg)](docs/CHANGELOG.md)
 
 A fast, colorful, and Rust-powered replacement for the traditional `ls` command.
 
-`bestls` provides human-readable file listings in both pretty tables and JSON formats, with sorting and other modern CLI conveniences built for speed and usability.
+`bestls` provides human-readable file listings in both pretty tables and JSON formats, with powerful filtering, tree view, and modern CLI conveniences built for speed and usability.
 
 ## ✨ Features
 
-- 🎨 **Colorful output** - Beautiful colored tables for easy reading
-- 📊 **Multiple formats** - Output as tables, compact JSON, or pretty JSON
+- 🎨 **Colorful output** - Beautiful colored tables with optional color controls
+- 📊 **Multiple formats** - Tables, compact JSON, pretty JSON, or single-column compact mode
 - ⚡ **Blazing fast** - Parallel metadata fetching with Rayon
-- 📏 **Human-readable** - File sizes in KB, MB, GB format
+- 📏 **Human-readable** - File sizes in KB, MB, GB format with conversions
 - 🔧 **Flexible sorting** - Sort by name, size, or modification date
-- 👁️ **Hidden files** - View hidden files with --all flag
-- 🔒 **File permissions** - Unix-style permission display
+- 🌳 **Tree view** - Recursive directory traversal with depth control
+- 🔍 **Smart filtering** - Filter by extension, pattern, and file size
+- 👁️ **Hidden files** - View hidden files with `--all` flag
+- 🔒 **File permissions** - Unix-style permission display (rwxrwxrwx)
 - 👥 **Owner info** - File owner and group information
-- 🔄 **Shell completion** - Built-in completion for Bash, Zsh, and Fish
-- 🪶 **Lightweight** - Single binary with no external dependencies
+- 📤 **Export data** - Save results to files, JSON formats for automation
+- 🔄 **Shell completion** - Tab-completion for Bash, Zsh, and Fish
+- 🪶 **Lightweight** - Single binary with no runtime dependencies
 
 ## 📦 Installation
 
@@ -38,126 +43,133 @@ cargo build --release
 
 The binary will be available at `target/release/bestls`.
 
-## 🚀 Usage
+## 🚀 Quick Start
 
-### Basic Commands
-
-List current directory:
+### Basic Usage
 
 ```bash
+# List current directory
 bestls
-```
 
-List specific directory:
-
-```bash
+# List specific directory
 bestls -p /path/to/directory
+
+# Include hidden files
+bestls -a
+
+# Sort by size
+bestls --sort size
 ```
 
-### Output Formats
-
-Pretty table (default):
+### Filtering & Tree View
 
 ```bash
-bestls
+# Show only Rust files
+bestls --filter-ext rs
+
+# Recursive tree view (limit depth to 2)
+bestls --tree --depth 2
+
+# Find files between 1KB and 10MB
+bestls --min-size 1KB --max-size 10MB
+
+# Pattern matching
+bestls --filter-name "*.md"
 ```
 
-Compact JSON:
+### Output Options
 
 ```bash
-bestls --json
+# Compact single-column output
+bestls --compact
+
+# Export as JSON
+bestls --format json --out results.json
+
+# Pretty JSON
+bestls --format json-pretty
+
+# No colors (for piping/scripts)
+bestls --no-color
 ```
 
-Pretty formatted JSON:
+### Advanced Examples
 
 ```bash
-bestls --json-pretty
-```
+# Find large Rust files sorted by size
+bestls -p src --filter-ext rs --min-size 5KB --sort size
 
-### Sorting Options
+# Export directory structure as JSON
+bestls --tree --depth 3 --format json --out structure.json
 
-Sort by file size:
-
-```bash
-bestls -s size
-```
-
-Sort by modification date:
-
-```bash
-bestls -s date
-```
-
-Sort by name (default):
-
-```bash
-bestls -s name
+# Filter markdown files and export
+bestls --filter-ext md --json-pretty --out docs_list.json
 ```
 
 ### Shell Completions
 
-bestls provides shell completions for Bash, Zsh, and Fish shells. To enable completions:
+Enable tab-completion in your shell:
 
 ```bash
 # For Bash
 bestls completion bash > ~/.local/share/bash-completion/completions/bestls
 
-# For Zsh
+# For Zsh (add to .zshrc: fpath=(~/.zfunc $fpath))
 bestls completion zsh > ~/.zfunc/_bestls
-# Then add this to your .zshrc if you haven't already:
-# fpath=(~/.zfunc $fpath)
 
 # For Fish
 bestls completion fish > ~/.config/fish/completions/bestls.fish
 ```
 
-### Examples
+## 📖 Documentation
 
-```bash
-# List home directory with size sorting
-bestls -p ~ -s size
-
-# Output current directory as pretty JSON
-bestls --json-pretty
-
-# List /etc directory sorted by modification date
-bestls -p /etc -s date
-
-# Show all files including hidden ones
-bestls -a
-
-# List files with full details (permissions, owner, group)
-bestls -a -s date
-```
-
-### Help
-
-View all available options:
-
-```bash
-bestls --help
-```
+- **[EXAMPLES.md](docs/EXAMPLES.md)** - Comprehensive usage examples and workflows
+- **[CHANGELOG.md](docs/CHANGELOG.md)** - Version history and release notes
+- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Guidelines for contributors
+- **[ROADMAP.md](docs/ROADMAP.md)** - Planned features and development roadmap
+- **[VERSION_POLICY.md](docs/VERSION_POLICY.md)** - Version management and release process
+- **[IMPLEMENTATION_SUMMARY.md](docs/IMPLEMENTATION_SUMMARY.md)** - Technical implementation details
 
 ## 🛠️ Command Line Options
 
-| Option          | Short | Description                     |
-| --------------- | ----- | ------------------------------- |
-| `--path`        | `-p`  | Directory path to list          |
-| `--sort`        | `-s`  | Sort by: `name`, `size`, `date` |
-| `--all`         | `-a`  | Show hidden files               |
-| `--json`        |       | Output compact JSON format      |
-| `--json-pretty` |       | Output pretty formatted JSON    |
-| `completion`    |       | Generate shell completions      |
-| `--help`        | `-h`  | Show help information           |
-| `--version`     | `-V`  | Show version information        |
+### Core Options
 
-### Completion Options
+| Option      | Short | Description                 |
+| ----------- | ----- | --------------------------- |
+| `--path`    | `-p`  | Directory path to list      |
+| `--sort`    | `-s`  | Sort by: `name`, `size`, `date` |
+| `--all`     | `-a`  | Show hidden files (starting with .) |
+| `--help`    | `-h`  | Show help information       |
+| `--version` | `-V`  | Show version information    |
 
-| Shell  | Description               |
-| ------ | ------------------------- |
-| `bash` | Generate Bash completions |
-| `zsh`  | Generate Zsh completions  |
-| `fish` | Generate Fish completions |
+### Filtering Options
+
+| Option          | Description                                   |
+| --------------- | --------------------------------------------- |
+| `--tree`        | Recursive directory listing                   |
+| `--depth N`     | Maximum recursion depth                       |
+| `--filter-ext`  | Filter by extensions (comma-separated)        |
+| `--filter-name` | Filter by filename pattern (glob-style)       |
+| `--min-size`    | Minimum file size (e.g., 1KB, 1MB)            |
+| `--max-size`    | Maximum file size (e.g., 10MB, 1GB)           |
+
+### Output Options
+
+| Option          | Description                          |
+| --------------- | ------------------------------------ |
+| `--format`      | Output format: `table`, `json`, `json-pretty` |
+| `--compact`     | Single-column output mode            |
+| `--columns`     | Select visible columns               |
+| `--out`         | Export output to file                |
+| `--no-color`    | Disable colored output               |
+| `--json`        | Compact JSON (legacy)                |
+| `--json-pretty` | Pretty JSON (legacy)                 |
+
+### Subcommands
+
+| Command     | Description                      |
+| ----------- | -------------------------------- |
+| `completion`| Generate shell completions       |
 
 ## 🏗️ Building from Source
 
@@ -187,15 +199,26 @@ bestls --help
    cargo install --path .
    ```
 
+## 💬 Community
+
+Join our community discussions! We'd love to hear from you:
+
+- 💡 **[Ideas & Feature Requests](https://github.com/MurtadaNazar/bestls/discussions)** - Share your ideas for new features
+- ❓ **[Q&A](https://github.com/MurtadaNazar/bestls/discussions)** - Get help and ask questions
+- 🛠️ **[Show and Tell](https://github.com/MurtadaNazar/bestls/discussions)** - Share how you're using bestls
+- 📢 **[Announcements](https://github.com/MurtadaNazar/bestls/discussions)** - Stay updated with the latest news
+
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+For more details, see [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## 📄 License
 
