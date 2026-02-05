@@ -546,8 +546,19 @@ fn get_owner_group(metadata: &fs::Metadata) -> (String, String) {
 }
 
 /// Parse human-readable size strings (e.g., "1KB", "1.5MB", "100B")
+/// 
+/// # Examples
+/// - "1KB" → 1024
+/// - "1.5MB" → 1572864
+/// - "100" → 100 (defaults to bytes)
+/// - "invalid" → None (logs warning)
 pub fn parse_size(size_str: &str) -> Option<u64> {
     let size_str = size_str.trim().to_uppercase();
+    
+    if size_str.is_empty() {
+        eprintln!("Warning: empty size string provided");
+        return None;
+    }
     
     let (num_part, unit) = if let Some(pos) = size_str.find(|c: char| c.is_alphabetic()) {
         (&size_str[..pos], &size_str[pos..])
@@ -555,7 +566,13 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         (&size_str[..], "B")
     };
     
-    let num: f64 = num_part.trim().parse().ok()?;
+    let num: f64 = match num_part.trim().parse() {
+        Ok(n) => n,
+        Err(_) => {
+            eprintln!("Warning: invalid size value '{}' (expected a number)", num_part.trim());
+            return None;
+        }
+    };
     
     let multiplier = match unit {
         "B" => 1u64,
@@ -563,7 +580,10 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         "MB" | "M" => 1024u64 * 1024u64,
         "GB" | "G" => 1024u64 * 1024u64 * 1024u64,
         "TB" | "T" => 1024u64 * 1024u64 * 1024u64 * 1024u64,
-        _ => return None,
+        _ => {
+            eprintln!("Warning: unknown size unit '{}' (valid units: B, KB, MB, GB, TB)", unit);
+            return None;
+        }
     };
     
     Some((num * multiplier as f64) as u64)
@@ -581,33 +601,26 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
     })
 }
 
-/// Simple glob-style pattern matching
+/// Glob-style pattern matching using standard glob semantics
+/// 
+/// Supports:
+/// - `*` - matches any sequence of characters except path separators
+/// - `?` - matches a single character
+/// - `[abc]` - character classes
+/// - `[!abc]` - negated character classes
+///
+/// # Examples
+/// - `*.rs` - matches all .rs files
+/// - `test_*` - matches files starting with test_
+/// - `*_test.rs` - matches files ending with _test.rs
 pub fn matches_pattern(filename: &str, pattern: &str) -> bool {
-    // Simple implementation: * matches any sequence of characters
-    if pattern == "*" {
-        return true;
-    }
-    
-    if !pattern.contains('*') {
-        return filename == pattern;
-    }
-    
-    let parts: Vec<&str> = pattern.split('*').collect();
-    
-    if !filename.starts_with(parts[0]) {
-        return false;
-    }
-    
-    let mut remaining = &filename[parts[0].len()..];
-    for part in &parts[1..] {
-        if let Some(pos) = remaining.find(part) {
-            remaining = &remaining[pos + part.len()..];
-        } else {
-            return false;
+    match glob::Pattern::new(pattern) {
+        Ok(pat) => pat.matches(filename),
+        Err(e) => {
+            eprintln!("Warning: invalid glob pattern '{}': {}", pattern, e);
+            false
         }
     }
-    
-    true
 }
 
 /// Recursively get files with optional depth limit

@@ -11,7 +11,7 @@ A fast, colorful, and Rust-powered replacement for the traditional `ls` command.
 
 ## ✨ Features
 
-- 🎨 **Colorful output** - Beautiful colored tables with optional colors control
+- 🎨 **Colorful output** - Beautiful colored tables with optional color controls
 - 📊 **Multiple formats** - Tables, compact JSON, pretty JSON, or single-column compact mode
 - ⚡ **Blazing fast** - Parallel metadata fetching with Rayon
 - 📏 **Human-readable** - File sizes in KB, MB, GB format with conversions

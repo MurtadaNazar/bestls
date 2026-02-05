@@ -237,18 +237,29 @@ pub fn parse_columns(cols: &str) -> HashSet<String> {
         .collect()
 }
 
-pub fn print_table(
-    entries: Vec<FileEntry>,
+/// Format compact output as string
+pub fn format_compact(entries: &[FileEntry]) -> String {
+    entries.iter()
+        .map(|f| f.name.clone())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+/// Format table output as a string
+/// 
+/// # Arguments
+/// * `entries` - Vector of file entries to format
+/// * `columns` - Optional column selection (currently parsed but full filtering not yet implemented)
+/// * `compact` - If true, return single-column format
+/// * `use_color` - If true, apply color styling
+pub fn format_table(
+    entries: &[FileEntry],
     columns: Option<String>,
     compact: bool,
     use_color: bool,
-) {
+) -> String {
     if compact {
-        // Compact single-column mode
-        for entry in entries {
-            println!("{}", entry.name);
-        }
-        return;
+        return format_compact(entries);
     }
 
     let _selected_cols = columns.as_ref().map(|c| parse_columns(c));
@@ -276,5 +287,21 @@ pub fn print_table(
         table.modify(Rows::first(), Color::FG_BRIGHT_GREEN);
     }
 
-    println!("{table}");
+    table.to_string()
+}
+
+/// Print table output directly to stdout
+/// 
+/// Deprecated: Use `format_table` and print the result for better testability and flexibility
+#[deprecated(
+    since = "1.3.0",
+    note = "use format_table() to get the string and print it yourself"
+)]
+pub fn print_table(
+    entries: Vec<FileEntry>,
+    columns: Option<String>,
+    compact: bool,
+    use_color: bool,
+) {
+    println!("{}", format_table(&entries, columns, compact, use_color));
 }

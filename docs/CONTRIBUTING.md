@@ -6,7 +6,7 @@ Thank you for your interest in contributing to **bestls**! We welcome contributi
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md).
+This project and everyone participating in it is governed by our [Code of Conduct](../CODE_OF_CONDUCT.md).
 By participating, you are expected to uphold this code. Please report unacceptable behavior to [mkm9284@gmail.com](mailto:mkm9284@gmail.com).
 
 ---
@@ -70,7 +70,7 @@ ci(workflow): add security audit step
   - `ci` - CI/CD changes
   - `chore` - Maintenance tasks
 
-> **Reviewer Note:** Please follow the [Pull Request Review Checklist](docs/REVIEW_CHECKLIST.md) when reviewing pull requests.
+> **Reviewer Note:** Please follow the [Pull Request Review Checklist](REVIEW_CHECKLIST.md) when reviewing pull requests.
 
 ---
 
