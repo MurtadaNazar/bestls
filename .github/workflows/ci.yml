@@ -20,16 +20,22 @@ jobs:
 
     steps:
       - name: Checkout code
-        run: |
-          git clone https://github.com/MurtadaNazar/bestls.git .
-          git fetch origin ${{ github.ref }}
-          git checkout ${{ github.sha }}
+        uses: actions/checkout@v4
 
       - name: Install Rust
-        run: |
-          rustup update ${{ matrix.rust-version }}
-          rustup default ${{ matrix.rust-version }}
-          rustup component add rustfmt clippy
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-version }}
+          components: rustfmt, clippy
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -48,15 +54,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        run: |
-          git clone https://github.com/MurtadaNazar/bestls.git .
-          git fetch origin ${{ github.ref }}
-          git checkout ${{ github.sha }}
+        uses: actions/checkout@v4
 
       - name: Install Rust
-        run: |
-          rustup update stable
-          rustup default stable
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-audit
         run: cargo install cargo-audit
@@ -70,10 +71,7 @@ jobs:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
-        run: |
-          git clone https://github.com/MurtadaNazar/bestls.git .
-          git fetch origin ${{ github.ref }}
-          git checkout ${{ github.sha }}
+        uses: actions/checkout@v4
 
       - name: Get tag version
         id: get_version
