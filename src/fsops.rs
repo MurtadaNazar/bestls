@@ -72,7 +72,7 @@ use bytesize::ByteSize;
 use chrono::{DateTime, Utc};
 use rayon::prelude::*;
 use serde::Serialize;
-use std::{fs, io, path::Path};
+use std::{fmt, fs, io, path::Path};
 use strum::Display;
 
 #[cfg(unix)]
@@ -545,19 +545,48 @@ fn get_owner_group(metadata: &fs::Metadata) -> (String, String) {
     (user, group)
 }
 
+/// Error type for size parsing operations
+#[derive(Debug, Clone)]
+pub enum SizeParseError {
+    Empty,
+    InvalidNumber(String),
+    InvalidUnit(String),
+    Overflow,
+}
+
+impl fmt::Display for SizeParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SizeParseError::Empty => write!(f, "empty size string provided"),
+            SizeParseError::InvalidNumber(s) => {
+                write!(f, "invalid size value '{}' (expected a number)", s)
+            }
+            SizeParseError::InvalidUnit(u) => {
+                write!(
+                    f,
+                    "unknown size unit '{}' (valid units: B, KB, MB, GB, TB)",
+                    u
+                )
+            }
+            SizeParseError::Overflow => write!(f, "size value exceeds maximum ({})", u64::MAX),
+        }
+    }
+}
+
+impl std::error::Error for SizeParseError {}
+
 /// Parse human-readable size strings (e.g., "1KB", "1.5MB", "100B")
 ///
 /// # Examples
-/// - "1KB" → 1024
-/// - "1.5MB" → 1572864
-/// - "100" → 100 (defaults to bytes)
-/// - "invalid" → None (logs warning)
-pub fn parse_size(size_str: &str) -> Option<u64> {
+/// - "1KB" → Ok(1024)
+/// - "1.5MB" → Ok(1572864)
+/// - "100" → Ok(100) (defaults to bytes)
+/// - "invalid" → Err(SizeParseError::InvalidNumber(...))
+pub fn parse_size(size_str: &str) -> Result<u64, SizeParseError> {
     let size_str = size_str.trim().to_uppercase();
 
     if size_str.is_empty() {
-        eprintln!("Warning: empty size string provided");
-        return None;
+        return Err(SizeParseError::Empty);
     }
 
     let (num_part, unit) = if let Some(pos) = size_str.find(|c: char| c.is_alphabetic()) {
@@ -566,16 +595,18 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         (&size_str[..], "B")
     };
 
-    let num: f64 = match num_part.trim().parse() {
-        Ok(n) => n,
-        Err(_) => {
-            eprintln!(
-                "Warning: invalid size value '{}' (expected a number)",
-                num_part.trim()
-            );
-            return None;
-        }
-    };
+    let num: f64 = num_part
+        .trim()
+        .parse()
+        .map_err(|_| SizeParseError::InvalidNumber(num_part.trim().to_string()))?;
+
+    // Reject negative values
+    if num < 0.0 {
+        return Err(SizeParseError::InvalidNumber(format!(
+            "negative value {}",
+            num
+        )));
+    }
 
     let multiplier = match unit {
         "B" => 1u64,
@@ -583,27 +614,29 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         "MB" | "M" => 1024u64 * 1024u64,
         "GB" | "G" => 1024u64 * 1024u64 * 1024u64,
         "TB" | "T" => 1024u64 * 1024u64 * 1024u64 * 1024u64,
-        _ => {
-            eprintln!(
-                "Warning: unknown size unit '{}' (valid units: B, KB, MB, GB, TB)",
-                unit
-            );
-            return None;
-        }
+        _ => return Err(SizeParseError::InvalidUnit(unit.to_string())),
     };
 
-    Some((num * multiplier as f64) as u64)
+    // Check for overflow: ensure num * multiplier <= u64::MAX
+    let result = num * multiplier as f64;
+    if result > u64::MAX as f64 {
+        return Err(SizeParseError::Overflow);
+    }
+
+    Ok(result as u64)
 }
 
-/// Check if filename matches extension filter
+/// Check if filename matches extension filter (case-insensitive)
+/// Extensions should be pre-normalized (lowercase, without leading '.')
 pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
     if extensions.is_empty() {
         return true;
     }
 
+    let filename_lower = filename.to_lowercase();
     extensions.iter().any(|ext| {
-        let ext = ext.trim_start_matches('.');
-        filename.ends_with(&format!(".{}", ext))
+        // Extensions are pre-normalized, just check suffix
+        filename_lower.ends_with(&format!(".{}", ext))
     })
 }
 
@@ -674,13 +707,21 @@ fn collect_files_recursive(
         for entry in entries {
             if let Ok(metadata) = entry.metadata() {
                 if metadata.is_dir() {
-                    let _ = collect_files_recursive(
+                    // Propagate errors from subdirectory traversal instead of silently ignoring
+                    if let Err(e) = collect_files_recursive(
                         &entry.path(),
                         include_hidden,
                         max_depth,
                         current_depth + 1,
                         files,
-                    );
+                    ) {
+                        // Log warning but continue with other directories
+                        eprintln!(
+                            "Warning: failed to read directory '{}': {}",
+                            entry.path().display(),
+                            e
+                        );
+                    }
                 }
             }
         }
