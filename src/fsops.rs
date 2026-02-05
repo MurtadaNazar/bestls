@@ -577,6 +577,9 @@ impl std::error::Error for SizeParseError {}
 
 /// Parse human-readable size strings (e.g., "1KB", "1.5MB", "100B")
 ///
+/// Supports integer and decimal inputs (e.g., "1024", "1.5MB").
+/// Uses integer arithmetic where possible to avoid floating-point precision issues.
+///
 /// # Examples
 /// - "1KB" → Ok(1024)
 /// - "1.5MB" → Ok(1572864)
@@ -595,18 +598,7 @@ pub fn parse_size(size_str: &str) -> Result<u64, SizeParseError> {
         (&size_str[..], "B")
     };
 
-    let num: f64 = num_part
-        .trim()
-        .parse()
-        .map_err(|_| SizeParseError::InvalidNumber(num_part.trim().to_string()))?;
-
-    // Reject negative values
-    if num < 0.0 {
-        return Err(SizeParseError::InvalidNumber(format!(
-            "negative value {}",
-            num
-        )));
-    }
+    let num_str = num_part.trim();
 
     let multiplier = match unit {
         "B" => 1u64,
@@ -617,9 +609,29 @@ pub fn parse_size(size_str: &str) -> Result<u64, SizeParseError> {
         _ => return Err(SizeParseError::InvalidUnit(unit.to_string())),
     };
 
+    // Try parsing as u64 first (integer case)
+    if let Ok(num_u64) = num_str.parse::<u64>() {
+        return num_u64
+            .checked_mul(multiplier)
+            .ok_or(SizeParseError::Overflow);
+    }
+
+    // Fall back to f64 for decimal values (e.g., "1.5MB")
+    let num: f64 = num_str
+        .parse()
+        .map_err(|_| SizeParseError::InvalidNumber(num_str.to_string()))?;
+
+    // Reject negative values
+    if num < 0.0 {
+        return Err(SizeParseError::InvalidNumber(format!(
+            "negative value {}",
+            num
+        )));
+    }
+
     // Check for overflow: ensure num * multiplier <= u64::MAX
     let result = num * multiplier as f64;
-    if result > u64::MAX as f64 {
+    if result > u64::MAX as f64 || result.is_infinite() || result.is_nan() {
         return Err(SizeParseError::Overflow);
     }
 
@@ -669,6 +681,12 @@ pub fn matches_pattern(filename: &str, pattern: &glob::Pattern) -> bool {
 }
 
 /// Recursively get files with optional depth limit
+///
+/// # Depth semantics
+/// - `depth = 0` (or None): Unlimited depth, traverse all subdirectories
+/// - `depth = 1`: Only files in the specified directory (no recursion)
+/// - `depth = 2`: Files in the directory plus one level of subdirectories
+/// - `depth = n`: Files up to n levels deep
 pub fn get_files_recursive(
     path: &Path,
     include_hidden: bool,
@@ -686,9 +704,10 @@ fn collect_files_recursive(
     current_depth: usize,
     files: &mut Vec<FileEntry>,
 ) -> Result<(), io::Error> {
-    // Check depth limit
+    // Check depth limit: if current_depth >= max_depth and max_depth > 0, stop recursing
+    // max_depth = None or Some(0) means no limit; max_depth = 1 means current level only
     if let Some(max) = max_depth {
-        if current_depth > max {
+        if max > 0 && current_depth >= max {
             return Ok(());
         }
     }
@@ -708,25 +727,24 @@ fn collect_files_recursive(
 
     files.append(&mut file_entries);
 
-    // Recurse into directories
-    if current_depth < max_depth.unwrap_or(usize::MAX) {
-        for entry in entries {
-            if let Ok(metadata) = entry.metadata() {
-                if metadata.is_dir() {
-                    // Log errors from subdirectory traversal but continue with other directories
-                    if let Err(e) = collect_files_recursive(
-                        &entry.path(),
-                        include_hidden,
-                        max_depth,
-                        current_depth + 1,
-                        files,
-                    ) {
-                        eprintln!(
-                            "Warning: failed to read directory '{}': {}",
-                            entry.path().display(),
-                            e
-                        );
-                    }
+    // Recurse into directories if we haven't hit the depth limit
+    for entry in entries {
+        if let Ok(metadata) = entry.metadata() {
+            if metadata.is_dir() {
+                // Log subdirectory traversal errors but continue with other directories
+                // This allows collecting as many files as possible even if some subdirs are inaccessible
+                if let Err(e) = collect_files_recursive(
+                    &entry.path(),
+                    include_hidden,
+                    max_depth,
+                    current_depth + 1,
+                    files,
+                ) {
+                    eprintln!(
+                        "Warning: failed to read directory '{}': {}",
+                        entry.path().display(),
+                        e
+                    );
                 }
             }
         }
