@@ -571,7 +571,11 @@ impl fmt::Display for SizeParseError {
             }
             SizeParseError::Overflow => write!(f, "size value exceeds maximum ({})", u64::MAX),
             SizeParseError::NegativeValue { value } => {
-                write!(f, "invalid size value '{}' (size must be non-negative)", value)
+                write!(
+                    f,
+                    "invalid size value '{}' (size must be non-negative)",
+                    value
+                )
             }
         }
     }
