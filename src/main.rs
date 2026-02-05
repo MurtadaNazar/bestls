@@ -76,8 +76,28 @@ use owo_colors::OwoColorize;
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process;
 use table::format_table;
+
+/// Error type for filter configuration
+#[derive(Debug)]
+#[allow(clippy::enum_variant_names)]
+enum ConfigError {
+    InvalidGlobPattern(String),
+    InvalidMinSize(String),
+    InvalidMaxSize(String),
+}
+
+impl std::fmt::Display for ConfigError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConfigError::InvalidGlobPattern(e) => write!(f, "invalid glob pattern: {}", e),
+            ConfigError::InvalidMinSize(e) => write!(f, "invalid --min-size value: {}", e),
+            ConfigError::InvalidMaxSize(e) => write!(f, "invalid --max-size value: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for ConfigError {}
 
 /// Precomputed filter configuration to avoid repeated parsing per file
 struct FilterConfig {
@@ -89,8 +109,8 @@ struct FilterConfig {
 
 impl FilterConfig {
     /// Build filter configuration from CLI options, parsing once
-    /// Exits with error code 2 if any configuration is invalid
-    fn from_cli(cli: &Cli) -> Self {
+    /// Returns Err if any configuration is invalid
+    fn from_cli(cli: &Cli) -> Result<Self, ConfigError> {
         // Pre-normalize extensions: lowercase and strip leading '.'
         let exts = cli.filter_ext.as_ref().map(|ext_filter| {
             ext_filter
@@ -104,21 +124,20 @@ impl FilterConfig {
             Some(pattern_str) => match Pattern::new(pattern_str) {
                 Ok(pattern) => Some(pattern),
                 Err(e) => {
-                    eprintln!("Error: invalid glob pattern '{}': {}", pattern_str, e);
-                    process::exit(2);
+                    return Err(ConfigError::InvalidGlobPattern(format!(
+                        "invalid glob pattern '{}': {}",
+                        pattern_str, e
+                    )))
                 }
             },
             None => None,
         };
 
-        // Parse size strings once, exit on error
+        // Parse size strings once
         let min_size = if let Some(min_str) = cli.min_size.as_deref() {
             match parse_size(min_str) {
                 Ok(size) => Some(size),
-                Err(e) => {
-                    eprintln!("Error: invalid --min-size value: {}", e);
-                    process::exit(2);
-                }
+                Err(e) => return Err(ConfigError::InvalidMinSize(e.to_string())),
             }
         } else {
             None
@@ -127,21 +146,18 @@ impl FilterConfig {
         let max_size = if let Some(max_str) = cli.max_size.as_deref() {
             match parse_size(max_str) {
                 Ok(size) => Some(size),
-                Err(e) => {
-                    eprintln!("Error: invalid --max-size value: {}", e);
-                    process::exit(2);
-                }
+                Err(e) => return Err(ConfigError::InvalidMaxSize(e.to_string())),
             }
         } else {
             None
         };
 
-        FilterConfig {
+        Ok(FilterConfig {
             exts,
             name_pattern,
             min_size,
             max_size,
-        }
+        })
     }
 }
 
@@ -211,8 +227,14 @@ fn main() {
         .unwrap_or_else(|| PathBuf::from("."));
     let include_hidden: bool = cli.all;
 
-    // Precompute filter configuration once (exits with code 2 on invalid config)
-    let filter_cfg = FilterConfig::from_cli(&cli);
+    // Precompute filter configuration once
+    let filter_cfg = match FilterConfig::from_cli(&cli) {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            std::process::exit(2);
+        }
+    };
 
     // Get files (tree or flat)
     let get_result = load_files(&cli, &path, include_hidden);

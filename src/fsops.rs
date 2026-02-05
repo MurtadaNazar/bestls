@@ -634,10 +634,16 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
     }
 
     let filename_lower = filename.to_lowercase();
+    let filename_bytes = filename_lower.as_bytes();
+
     extensions.iter().any(|ext| {
-        // Extensions are pre-normalized; check filename ends with ".ext"
-        let dotted_ext = format!(".{}", ext);
-        filename_lower.ends_with(&dotted_ext)
+        // Extensions are pre-normalized; check if filename ends with ".ext"
+        // Avoid format! allocation: check for dot followed by extension bytes
+        if filename_bytes.len() <= ext.len() {
+            return false;
+        }
+        let dot_pos = filename_bytes.len() - ext.len() - 1;
+        filename_bytes[dot_pos] == b'.' && &filename_bytes[dot_pos + 1..] == ext.as_bytes()
     })
 }
 
@@ -657,7 +663,7 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
 /// # Note
 /// This function assumes the glob pattern has already been compiled and validated
 /// (e.g., during filter configuration construction), so it performs only the match
-/// operation without additional allocations or error handling.
+/// operation without recompiling or validating the pattern.
 pub fn matches_pattern(filename: &str, pattern: &glob::Pattern) -> bool {
     pattern.matches(filename)
 }
