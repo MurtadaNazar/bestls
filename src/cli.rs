@@ -369,6 +369,30 @@ pub enum Commands {
         #[arg(value_enum)]
         shell: Shell,
     },
+
+    /// Manage bestls theme and configuration.
+    ///
+    /// This subcommand helps users manage color themes and configuration.
+    Theme {
+        #[command(subcommand)]
+        subcommand: ThemeSubcommand,
+    },
+}
+
+#[derive(Debug, Parser)]
+pub enum ThemeSubcommand {
+    /// Initialize a sample config file at ~/.config/bestls/config.toml
+    Init {
+        /// Show the config file path after creation
+        #[arg(long)]
+        show: bool,
+    },
+
+    /// Show the path to the config file
+    Path,
+
+    /// Reset theme to default
+    Reset,
 }
 
 impl Cli {

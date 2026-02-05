@@ -68,8 +68,9 @@ mod fsops;
 mod table;
 
 use clap::Parser;
-use cli::{Cli, Commands, OutputFormat, SortBy};
-use color::load_theme;
+use cli::{Cli, Commands, OutputFormat, SortBy, ThemeSubcommand};
+use color::{create_sample_config, load_theme};
+use dirs;
 use fsops::{
     get_files, get_files_recursive, matches_extension, matches_pattern, parse_size, FileEntry,
 };
@@ -217,6 +218,47 @@ fn load_files(cli: &Cli, path: &Path, include_hidden: bool) -> std::io::Result<V
     }
 }
 
+/// Handle theme management commands
+fn handle_theme_command(subcommand: &ThemeSubcommand) {
+    match subcommand {
+        ThemeSubcommand::Init { show } => match create_sample_config() {
+            Ok(path) => {
+                println!("Theme config created at: {}", path.display());
+                if *show {
+                    match std::fs::read_to_string(&path) {
+                        Ok(content) => println!("\n{}", content),
+                        Err(e) => eprintln!("Error reading config: {}", e),
+                    }
+                }
+            }
+            Err(e) => eprintln!("Error creating config: {}", e),
+        },
+        ThemeSubcommand::Path => {
+            if let Some(config_dir) = dirs::config_dir() {
+                let config_path = config_dir.join("bestls").join("config.toml");
+                println!("{}", config_path.display());
+            } else {
+                eprintln!("Could not determine config directory");
+            }
+        }
+        ThemeSubcommand::Reset => {
+            if let Some(config_dir) = dirs::config_dir() {
+                let config_path = config_dir.join("bestls").join("config.toml");
+                if config_path.exists() {
+                    match std::fs::remove_file(&config_path) {
+                        Ok(_) => println!("Theme reset to default (config file removed)"),
+                        Err(e) => eprintln!("Error removing config: {}", e),
+                    }
+                } else {
+                    println!("Theme already at default (no config file found)");
+                }
+            } else {
+                eprintln!("Could not determine config directory");
+            }
+        }
+    }
+}
+
 /// Main entry point for the bestls application.
 ///
 /// This function orchestrates the entire file listing process:
@@ -229,9 +271,17 @@ fn load_files(cli: &Cli, path: &Path, include_hidden: bool) -> std::io::Result<V
 fn main() {
     let cli: Cli = Cli::parse();
 
-    if let Some(Commands::Completion { shell }) = cli.command {
-        Cli::generate_completion(shell);
-        return;
+    if let Some(command) = &cli.command {
+        match command {
+            Commands::Completion { shell } => {
+                Cli::generate_completion(*shell);
+                return;
+            }
+            Commands::Theme { subcommand } => {
+                handle_theme_command(subcommand);
+                return;
+            }
+        }
     }
 
     // Load theme for color output
