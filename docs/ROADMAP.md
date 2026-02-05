@@ -35,11 +35,13 @@ For detailed developer tasks, see [TODO.md](./TODO.md).
 - Export output to file
 - Multiple output formats (JSON, table)
 
-### v1.5 – Color & Theme
+### ✅ v1.5 – Color & Theme (COMPLETED)
 
-- Color coding by extension
-- Theme support via config file
-- Disable colors with `--no-color`
+- ✅ Color coding by extension
+- ✅ Theme support via config file (`~/.config/bestls/config.toml`)
+- ✅ Disable colors with `--no-color`
+- ✅ Theme management CLI (`theme init`, `theme path`, `theme reset`)
+- ✅ Default color mappings for 16+ file types
 
 ### v1.6 – Advanced Configuration
 

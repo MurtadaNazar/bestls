@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-05
+
+### Added
+
+- **Color & Theme System** - Fully customizable color themes for file listings
+  - Theme configuration via `~/.config/bestls/config.toml`
+  - File type-based coloring (files, directories, symlinks)
+  - Extension-based file coloring with 16+ default mappings
+  - 16 ANSI color options (basic + bright variants)
+- **Theme Management CLI Commands**:
+  - `bestls theme init` - Generate default config file
+  - `bestls theme init --show` - Display config content after creation
+  - `bestls theme path` - Show config file location
+  - `bestls theme reset` - Reset to default colors
+- **Default Extension Color Mappings** for common file types:
+  - Programming languages: Rust, Python, JavaScript, TypeScript, Go, C/C++, Java
+  - Documents: Markdown, Text, PDF
+  - Configuration: TOML, JSON, YAML, XML
+  - Archives: ZIP, TAR, GZIP
+  - Images: PNG, JPEG, GIF, SVG
+- **Color Customization Documentation** - Comprehensive theming guide in `docs/THEMING.md`
+- **Unit tests** for color parsing and file extension coloring
+
+### Enhanced
+
+- Table formatting now supports themable colors
+- Color configuration loads automatically from user config
+- Backward compatible with `--no-color` flag
+- Improved color quality and visual consistency
+
+### Changed
+
+- Updated version to 1.5.0 in Cargo.toml and README
+- Added `toml` crate dependency for configuration parsing
+- Updated README with theme customization section
+- Updated ROADMAP.md to mark v1.5 as completed
+
 ## [1.3.0] - 2026-02-05
 
 ### Added

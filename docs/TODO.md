@@ -45,11 +45,13 @@ A structured and professional development plan for future enhancements to the `b
 
 ---
 
-## 🎨 v1.5 – Color & Theme
+## ✅ v1.5 – Color & Theme
 
-- [ ] Color code files by extension
-- [ ] Theme support via `~/.config/bestls/config.toml`
-- [ ] Add `--no-color` flag to disable colors
+- [x] Color code files by extension
+- [x] Theme support via `~/.config/bestls/config.toml`
+- [x] Add `--no-color` flag to disable colors
+- [x] Theme management CLI commands (`theme init`, `theme path`, `theme reset`)
+- [x] Default extension color mappings (16+ file types)
 
 ---
 

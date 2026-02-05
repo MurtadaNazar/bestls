@@ -3,7 +3,7 @@
 [![Rust](https://img.shields.io/badge/rust-1.85+-orange.svg)](https://www.rust-lang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![GitHub Discussions](https://img.shields.io/github/discussions/MurtadaNazar/bestls?color=blue&logo=github)](https://github.com/MurtadaNazar/bestls/discussions)
-[![Version: 1.3.0](https://img.shields.io/badge/version-1.3.0-blue.svg)](docs/CHANGELOG.md)
+[![Version: 1.5.0](https://img.shields.io/badge/version-1.5.0-blue.svg)](docs/CHANGELOG.md)
 
 A fast, colorful, and Rust-powered replacement for the traditional `ls` command.
 
@@ -12,6 +12,7 @@ A fast, colorful, and Rust-powered replacement for the traditional `ls` command.
 ## ✨ Features
 
 - 🎨 **Colorful output** - Beautiful colored tables with optional color controls
+- 🎭 **Customizable themes** - Color by file type and extension via `~/.config/bestls/config.toml`
 - 📊 **Multiple formats** - Tables, compact JSON, pretty JSON, or single-column compact mode
 - ⚡ **Blazing fast** - Parallel metadata fetching with Rayon
 - 📏 **Human-readable** - File sizes in KB, MB, GB format with conversions
@@ -106,6 +107,26 @@ bestls --tree --depth 3 --format json --out structure.json
 bestls --filter-ext md --json-pretty --out docs_list.json
 ```
 
+### Theme Customization
+
+Customize colors for your terminal:
+
+```bash
+# Initialize a theme config file
+bestls theme init --show
+
+# This creates ~/.config/bestls/config.toml with color options
+# Edit to customize colors for file types and extensions
+
+# Find your config file location
+bestls theme path
+
+# Reset to default colors
+bestls theme reset
+```
+
+See [THEMING.md](docs/THEMING.md) for detailed configuration options and examples.
+
 ### Shell Completions
 
 Enable tab-completion in your shell:
@@ -124,6 +145,7 @@ bestls completion fish > ~/.config/fish/completions/bestls.fish
 ## 📖 Documentation
 
 - **[EXAMPLES.md](docs/EXAMPLES.md)** - Comprehensive usage examples and workflows
+- **[THEMING.md](docs/THEMING.md)** - Color themes and customization guide
 - **[CHANGELOG.md](docs/CHANGELOG.md)** - Version history and release notes
 - **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Guidelines for contributors
 - **[ROADMAP.md](docs/ROADMAP.md)** - Planned features and development roadmap
