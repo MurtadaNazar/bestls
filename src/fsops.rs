@@ -635,8 +635,9 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
 
     let filename_lower = filename.to_lowercase();
     extensions.iter().any(|ext| {
-        // Extensions are pre-normalized, just check suffix
-        filename_lower.ends_with(&format!(".{}", ext))
+        // Extensions are pre-normalized; check filename ends with ".ext"
+        let dotted_ext = format!(".{}", ext);
+        filename_lower.ends_with(&dotted_ext)
     })
 }
 
@@ -652,14 +653,13 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
 /// - `*.rs` - matches all .rs files
 /// - `test_*` - matches files starting with test_
 /// - `*_test.rs` - matches files ending with _test.rs
-pub fn matches_pattern(filename: &str, pattern: &str) -> bool {
-    match glob::Pattern::new(pattern) {
-        Ok(pat) => pat.matches(filename),
-        Err(e) => {
-            eprintln!("Warning: invalid glob pattern '{}': {}", pattern, e);
-            false
-        }
-    }
+///
+/// # Note
+/// This function assumes the glob pattern has already been compiled and validated
+/// (e.g., during filter configuration construction), so it performs only the match
+/// operation without additional allocations or error handling.
+pub fn matches_pattern(filename: &str, pattern: &glob::Pattern) -> bool {
+    pattern.matches(filename)
 }
 
 /// Recursively get files with optional depth limit
@@ -707,7 +707,7 @@ fn collect_files_recursive(
         for entry in entries {
             if let Ok(metadata) = entry.metadata() {
                 if metadata.is_dir() {
-                    // Propagate errors from subdirectory traversal instead of silently ignoring
+                    // Log errors from subdirectory traversal but continue with other directories
                     if let Err(e) = collect_files_recursive(
                         &entry.path(),
                         include_hidden,
@@ -715,7 +715,6 @@ fn collect_files_recursive(
                         current_depth + 1,
                         files,
                     ) {
-                        // Log warning but continue with other directories
                         eprintln!(
                             "Warning: failed to read directory '{}': {}",
                             entry.path().display(),
