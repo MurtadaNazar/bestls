@@ -294,6 +294,7 @@ pub fn format_table(
 /// Print table output directly to stdout
 ///
 /// Deprecated: Use `format_table` and print the result for better testability and flexibility
+#[allow(dead_code)]
 #[deprecated(
     since = "1.3.0",
     note = "use format_table() to get the string and print it yourself"

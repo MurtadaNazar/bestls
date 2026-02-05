@@ -98,8 +98,7 @@ use std::path::PathBuf;
 /// - Supports sorting by name, size, or modification date.
 /// - Pretty-printed JSON output available.
 /// - Shell completion generation support.
-/// ```
-
+///
 /// Enumeration of available output formats.
 ///
 /// This enum defines the different output formats supported by bestls.

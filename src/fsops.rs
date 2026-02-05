@@ -663,10 +663,7 @@ fn collect_files_recursive(
 
     let mut file_entries: Vec<FileEntry> = entries
         .par_iter()
-        .map(|entry| {
-            let file_entry = map_data(entry);
-            file_entry
-        })
+        .map(map_data)
         .filter_map(Result::ok)
         .collect();
 
