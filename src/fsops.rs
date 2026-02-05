@@ -704,10 +704,10 @@ fn collect_files_recursive(
     current_depth: usize,
     files: &mut Vec<FileEntry>,
 ) -> Result<(), io::Error> {
-    // Check depth limit: if current_depth >= max_depth, stop recursing
-    // max_depth = None means no limit, max_depth = 1 means current level only
+    // Check depth limit: if current_depth >= max_depth and max_depth > 0, stop recursing
+    // max_depth = None or Some(0) means no limit; max_depth = 1 means current level only
     if let Some(max) = max_depth {
-        if current_depth >= max {
+        if max > 0 && current_depth >= max {
             return Ok(());
         }
     }
