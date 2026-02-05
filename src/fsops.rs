@@ -308,7 +308,7 @@ pub struct FileEntry {
 /// let hidden_count = all_files.iter()
 ///     .filter(|f| f.name.starts_with('.'))
 ///     .count();
-/// 
+///
 /// println!("Found {} hidden files", hidden_count);
 /// # Ok::<(), std::io::Error>(())
 /// ```
@@ -546,7 +546,7 @@ fn get_owner_group(metadata: &fs::Metadata) -> (String, String) {
 }
 
 /// Parse human-readable size strings (e.g., "1KB", "1.5MB", "100B")
-/// 
+///
 /// # Examples
 /// - "1KB" → 1024
 /// - "1.5MB" → 1572864
@@ -554,18 +554,18 @@ fn get_owner_group(metadata: &fs::Metadata) -> (String, String) {
 /// - "invalid" → None (logs warning)
 pub fn parse_size(size_str: &str) -> Option<u64> {
     let size_str = size_str.trim().to_uppercase();
-    
+
     if size_str.is_empty() {
         eprintln!("Warning: empty size string provided");
         return None;
     }
-    
+
     let (num_part, unit) = if let Some(pos) = size_str.find(|c: char| c.is_alphabetic()) {
         (&size_str[..pos], &size_str[pos..])
     } else {
         (&size_str[..], "B")
     };
-    
+
     let num: f64 = match num_part.trim().parse() {
         Ok(n) => n,
         Err(_) => {
