@@ -36,7 +36,7 @@
 //!
 //! let path = Path::new(".");
 //! let files = get_files(&path, false)?;
-//! 
+//!
 //! // Print formatted table to stdout
 //! print_table(files);
 //! # Ok::<(), std::io::Error>(())
@@ -239,14 +239,15 @@ pub fn parse_columns(cols: &str) -> HashSet<String> {
 
 /// Format compact output as string
 pub fn format_compact(entries: &[FileEntry]) -> String {
-    entries.iter()
+    entries
+        .iter()
         .map(|f| f.name.clone())
         .collect::<Vec<_>>()
         .join("\n")
 }
 
 /// Format table output as a string
-/// 
+///
 /// # Arguments
 /// * `entries` - Vector of file entries to format
 /// * `columns` - Optional column selection (currently parsed but full filtering not yet implemented)
@@ -291,7 +292,7 @@ pub fn format_table(
 }
 
 /// Print table output directly to stdout
-/// 
+///
 /// Deprecated: Use `format_table` and print the result for better testability and flexibility
 #[deprecated(
     since = "1.3.0",

@@ -569,11 +569,14 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
     let num: f64 = match num_part.trim().parse() {
         Ok(n) => n,
         Err(_) => {
-            eprintln!("Warning: invalid size value '{}' (expected a number)", num_part.trim());
+            eprintln!(
+                "Warning: invalid size value '{}' (expected a number)",
+                num_part.trim()
+            );
             return None;
         }
     };
-    
+
     let multiplier = match unit {
         "B" => 1u64,
         "KB" | "K" => 1024u64,
@@ -581,11 +584,14 @@ pub fn parse_size(size_str: &str) -> Option<u64> {
         "GB" | "G" => 1024u64 * 1024u64 * 1024u64,
         "TB" | "T" => 1024u64 * 1024u64 * 1024u64 * 1024u64,
         _ => {
-            eprintln!("Warning: unknown size unit '{}' (valid units: B, KB, MB, GB, TB)", unit);
+            eprintln!(
+                "Warning: unknown size unit '{}' (valid units: B, KB, MB, GB, TB)",
+                unit
+            );
             return None;
         }
     };
-    
+
     Some((num * multiplier as f64) as u64)
 }
 
@@ -594,7 +600,7 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
     if extensions.is_empty() {
         return true;
     }
-    
+
     extensions.iter().any(|ext| {
         let ext = ext.trim_start_matches('.');
         filename.ends_with(&format!(".{}", ext))
@@ -602,7 +608,7 @@ pub fn matches_extension(filename: &str, extensions: &[String]) -> bool {
 }
 
 /// Glob-style pattern matching using standard glob semantics
-/// 
+///
 /// Supports:
 /// - `*` - matches any sequence of characters except path separators
 /// - `?` - matches a single character
@@ -647,15 +653,15 @@ fn collect_files_recursive(
             return Ok(());
         }
     }
-    
+
     let entries: Vec<fs::DirEntry> = fs::read_dir(path)?
         .filter_map(Result::ok)
         .filter(|entry: &fs::DirEntry| {
             include_hidden || !entry.file_name().to_string_lossy().starts_with('.')
         })
         .collect();
-    
-    let mut file_entries: Vec<FileEntry> = entries
+
+        let mut file_entries: Vec<FileEntry> = entries
         .par_iter()
         .map(|entry| {
             let file_entry = map_data(entry);
@@ -663,10 +669,10 @@ fn collect_files_recursive(
         })
         .filter_map(Result::ok)
         .collect();
-    
-    files.append(&mut file_entries);
-    
-    // Recurse into directories
+
+        files.append(&mut file_entries);
+
+        // Recurse into directories
     if current_depth < max_depth.unwrap_or(usize::MAX) {
         for entry in entries {
             if let Ok(metadata) = entry.metadata() {
@@ -680,8 +686,8 @@ fn collect_files_recursive(
                     );
                 }
             }
-        }
-    }
-    
-    Ok(())
-}
+            }
+            }
+
+            Ok(())
+            }

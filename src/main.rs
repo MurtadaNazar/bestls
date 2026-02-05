@@ -50,7 +50,7 @@
 //! // Get file entries for current directory
 //! let path = PathBuf::from(".");
 //! let include_hidden = false;
-//! 
+//!
 //! match get_files(&path, include_hidden) {
 //!     Ok(files) => {
 //!         println!("Found {} files", files.len());
@@ -68,7 +68,9 @@ mod table;
 
 use clap::Parser;
 use cli::{Cli, Commands, OutputFormat, SortBy};
-use fsops::{get_files, get_files_recursive, parse_size, matches_extension, matches_pattern, FileEntry};
+use fsops::{
+    get_files, get_files_recursive, matches_extension, matches_pattern, parse_size, FileEntry,
+};
 use owo_colors::OwoColorize;
 use std::fs::File;
 use std::io::Write;
@@ -87,14 +89,14 @@ fn passes_filters(f: &FileEntry, cli: &Cli) -> bool {
             return false;
         }
     }
-    
+
     // Name pattern filter
     if let Some(ref name_pattern) = cli.filter_name {
         if !matches_pattern(&f.name, name_pattern) {
             return false;
         }
     }
-    
+
     // Minimum size filter
     if let Some(ref min) = cli.min_size {
         if let Some(min_bytes) = parse_size(min) {
@@ -103,7 +105,7 @@ fn passes_filters(f: &FileEntry, cli: &Cli) -> bool {
             }
         }
     }
-    
+
     // Maximum size filter
     if let Some(ref max) = cli.max_size {
         if let Some(max_bytes) = parse_size(max) {
@@ -112,12 +114,12 @@ fn passes_filters(f: &FileEntry, cli: &Cli) -> bool {
             }
         }
     }
-    
+
     true
 }
 
 /// Main entry point for the bestls application.
-/// 
+///
 /// This function orchestrates the entire file listing process:
 /// 1. Parses command-line arguments using `clap`
 /// 2. Handles shell completion generation if requested
@@ -133,7 +135,11 @@ fn main() {
         return;
     }
 
-    let path: PathBuf = cli.path.as_deref().map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from("."));
+    let path: PathBuf = cli
+        .path
+        .as_deref()
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| PathBuf::from("."));
     let include_hidden: bool = cli.all;
 
     // Get files (tree or flat)
@@ -162,15 +168,12 @@ fn main() {
             }
 
             // Generate output based on selected format
-            let output = match cli.format {
-                OutputFormat::Json => {
-                    serde_json::to_string(&files)
-                        .unwrap_or_else(|_| "cannot parse to JSON".into())
-                }
-                OutputFormat::JsonPretty => {
-                    serde_json::to_string_pretty(&files)
-                        .unwrap_or_else(|_| "cannot parse to JSON".into())
-                }
+             let output = match cli.format {
+                 OutputFormat::Json => {
+                     serde_json::to_string(&files).unwrap_or_else(|_| "cannot parse to JSON".into())
+                 }
+                 OutputFormat::JsonPretty => serde_json::to_string_pretty(&files)
+                     .unwrap_or_else(|_| "cannot parse to JSON".into()),
                 OutputFormat::Table => {
                     // Handle legacy json/json_pretty flags for backward compatibility
                     if cli.json_pretty {
